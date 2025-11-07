@@ -50,7 +50,7 @@ frontend/.vite/
 *.sqlite
 *.sqlite3
 
-# Uploads
+# Uploads (don't commit user uploads)
 backend/uploads/*
 !backend/uploads/.gitkeep
 
@@ -65,3 +65,6 @@ logs/
 
 # OS
 Thumbs.db
+
+# Old client folder (React - not used)
+client/
