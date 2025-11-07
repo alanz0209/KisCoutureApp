@@ -79,7 +79,14 @@
             {{ error }}
           </div>
 
-          <button type="submit" class="btn-setup" :disabled="loading">
+          <div v-if="accountExists" class="info-message">
+            <p>👋 Un compte existe déjà !</p>
+            <button type="button" @click="goToLogin" class="btn-login-existing">
+              🔑 Se Connecter
+            </button>
+          </div>
+
+          <button v-else type="submit" class="btn-setup" :disabled="loading">
             {{ loading ? '⏳ Configuration...' : '✅ Valider et Sécuriser' }}
           </button>
         </form>
@@ -121,6 +128,7 @@ export default {
     const loading = ref(false);
     const error = ref('');
     const isSetupComplete = ref(false);
+    const accountExists = ref(false);
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -178,8 +186,15 @@ export default {
           }, 2000);
         }
       } catch (err) {
-        if (err.response && err.response.data) {
-          error.value = err.response.data.error || 'Erreur lors de la création du compte';
+        if (err.response && err.response.data && err.response.data.error) {
+          const errorMsg = err.response.data.error;
+          if (errorMsg.includes('existe déjà') || errorMsg.includes('already exists')) {
+            // Un compte existe, montrer le bouton de connexion
+            accountExists.value = true;
+            error.value = '';
+          } else {
+            error.value = errorMsg;
+          }
         } else {
           error.value = 'Erreur de connexion au serveur. Vérifiez votre connexion.';
         }
@@ -202,6 +217,7 @@ export default {
       loading,
       error,
       isSetupComplete,
+      accountExists,
       handleSetup,
       goToLogin
     };
@@ -354,6 +370,41 @@ export default {
   font-size: 14px;
   text-align: center;
   border-left: 4px solid #e91e63;
+}
+
+.info-message {
+  background: #e3f2fd;
+  border-left: 4px solid #2196f3;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.info-message p {
+  color: #1976d2;
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 15px;
+}
+
+.btn-login-existing {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.btn-login-existing:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(33, 150, 243, 0.4);
 }
 
 .btn-setup {
