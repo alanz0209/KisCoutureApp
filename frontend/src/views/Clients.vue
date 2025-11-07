@@ -61,50 +61,53 @@
 
             <div class="section">
               <h3>Mesures</h3>
+              <p style="color: #7f8c8d; font-size: 13px; margin-bottom: 15px;">
+                💡 Astuce : Vous pouvez utiliser des tirets pour plusieurs valeurs (ex: 90-95-100)
+              </p>
               <div class="measurements-grid">
                 <div class="form-group">
                   <label>Dos (cm)</label>
-                  <input type="number" step="0.1" v-model="formData.measurements.do" />
+                  <input type="text" v-model="formData.measurements.do" placeholder="Ex: 90 ou 90-95" />
                 </div>
                 <div class="form-group">
                   <label>Poitrine (cm)</label>
-                  <input type="number" step="0.1" v-model="formData.measurements.poitrine" />
+                  <input type="text" v-model="formData.measurements.poitrine" placeholder="Ex: 95 ou 95-100" />
                 </div>
                 <div class="form-group">
                   <label>Taille (cm)</label>
-                  <input type="number" step="0.1" v-model="formData.measurements.taille" />
+                  <input type="text" v-model="formData.measurements.taille" placeholder="Ex: 80 ou 80-85" />
                 </div>
                 <div class="form-group">
                   <label>Longueur (cm)</label>
-                  <input type="number" step="0.1" v-model="formData.measurements.longueur" />
+                  <input type="text" v-model="formData.measurements.longueur" placeholder="Ex: 100 ou 100-105" />
                 </div>
                 <div class="form-group">
                   <label>Manche (cm)</label>
-                  <input type="number" step="0.1" v-model="formData.measurements.manche" />
+                  <input type="text" v-model="formData.measurements.manche" placeholder="Ex: 60 ou 60-62" />
                 </div>
                 <div class="form-group">
                   <label>Tour Manche (cm)</label>
-                  <input type="number" step="0.1" v-model="formData.measurements.tour_manche" />
+                  <input type="text" v-model="formData.measurements.tour_manche" placeholder="Ex: 35 ou 35-38" />
                 </div>
                 <div class="form-group">
                   <label>Ceinture (cm)</label>
-                  <input type="number" step="0.1" v-model="formData.measurements.ceinture" />
+                  <input type="text" v-model="formData.measurements.ceinture" placeholder="Ex: 85 ou 85-90" />
                 </div>
                 <div class="form-group">
                   <label>Bassin (cm)</label>
-                  <input type="number" step="0.1" v-model="formData.measurements.bassin" />
+                  <input type="text" v-model="formData.measurements.bassin" placeholder="Ex: 100 ou 100-105" />
                 </div>
                 <div class="form-group">
                   <label>Cuisse (cm)</label>
-                  <input type="number" step="0.1" v-model="formData.measurements.cuisse" />
+                  <input type="text" v-model="formData.measurements.cuisse" placeholder="Ex: 55 ou 55-60" />
                 </div>
                 <div class="form-group">
                   <label>Longueur Pantalon (cm)</label>
-                  <input type="number" step="0.1" v-model="formData.measurements.longueur_pantalon" />
+                  <input type="text" v-model="formData.measurements.longueur_pantalon" placeholder="Ex: 105 ou 105-110" />
                 </div>
                 <div class="form-group">
                   <label>Bas (cm)</label>
-                  <input type="number" step="0.1" v-model="formData.measurements.bas" />
+                  <input type="text" v-model="formData.measurements.bas" placeholder="Ex: 40 ou 40-42" />
                 </div>
                 <div class="form-group full-width">
                   <label>Image de référence (optionnelle)</label>
