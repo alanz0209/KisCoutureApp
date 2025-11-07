@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import localforage from 'localforage';
+import FirstSetup from '../views/FirstSetup.vue';
 import Login from '../views/Login.vue';
 import Dashboard from '../views/Dashboard.vue';
 import Clients from '../views/Clients.vue';
@@ -10,7 +11,13 @@ import Settings from '../views/Settings.vue';
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    redirect: '/setup'
+  },
+  {
+    path: '/setup',
+    name: 'FirstSetup',
+    component: FirstSetup,
+    meta: { requiresAuth: false, isPublic: true }
   },
   {
     path: '/login',
@@ -57,6 +64,19 @@ const router = createRouter({
 
 // Navigation guard pour vérifier l'authentification
 router.beforeEach(async (to, from, next) => {
+  // Vérifier si la configuration initiale est faite
+  const setupDone = await localforage.getItem('initial_setup_done');
+  
+  // Si pas de setup et qu'on ne va pas vers /setup, rediriger vers /setup
+  if (!setupDone && to.path !== '/setup') {
+    return next('/setup');
+  }
+  
+  // Si setup fait et qu'on va vers /setup, rediriger vers /login
+  if (setupDone && to.path === '/setup') {
+    return next('/login');
+  }
+  
   const isAuthenticated = await localforage.getItem('isAuthenticated');
   
   if (to.meta.requiresAuth && !isAuthenticated) {
