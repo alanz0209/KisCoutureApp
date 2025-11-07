@@ -82,7 +82,8 @@
           </button>
         </div>
       </div>
-      <table class="table">
+      <div class="table-wrapper">
+        <table class="table">
         <thead>
           <tr>
             <th>Client</th>
@@ -141,7 +142,7 @@
             </td>
           </tr>
         </tbody>
-        </table>
+      </table>
       </div>
     </div>
   </div>
