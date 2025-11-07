@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import localforage from 'localforage';
+import axios from 'axios';
 import FirstSetup from '../views/FirstSetup.vue';
 import Login from '../views/Login.vue';
 import Dashboard from '../views/Dashboard.vue';
@@ -8,6 +9,8 @@ import Orders from '../views/Orders.vue';
 import Export from '../views/Export.vue';
 import Settings from '../views/Settings.vue';
 import MasterRecovery from '../views/MasterRecovery.vue';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const routes = [
   {
@@ -76,17 +79,23 @@ router.beforeEach(async (to, from, next) => {
     return next();
   }
   
-  // Vérifier si la configuration initiale est faite
-  const setupDone = await localforage.getItem('initial_setup_done');
-  
-  // Si pas de setup et qu'on ne va pas vers /setup, rediriger vers /setup
-  if (!setupDone && to.path !== '/setup') {
-    return next('/setup');
-  }
-  
-  // Si setup fait et qu'on va vers /setup, rediriger vers /login
-  if (setupDone && to.path === '/setup') {
-    return next('/login');
+  // Vérifier si un utilisateur existe sur le backend
+  try {
+    const response = await axios.get(`${API_URL}/auth/check`);
+    const hasUser = response.data.has_user;
+    
+    // Si pas d'utilisateur et qu'on ne va pas vers /setup, rediriger vers /setup
+    if (!hasUser && to.path !== '/setup') {
+      return next('/setup');
+    }
+    
+    // Si utilisateur existe et qu'on va vers /setup, rediriger vers /login
+    if (hasUser && to.path === '/setup') {
+      return next('/login');
+    }
+  } catch (err) {
+    console.error('Erreur lors de la vérification de l\'utilisateur:', err);
+    // En cas d'erreur réseau, continuer avec la vérification locale
   }
   
   const isAuthenticated = await localforage.getItem('isAuthenticated');

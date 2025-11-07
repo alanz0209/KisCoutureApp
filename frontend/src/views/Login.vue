@@ -70,6 +70,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import localforage from 'localforage';
+import axios from 'axios';
 
 export default {
   name: 'Login',
@@ -81,28 +82,36 @@ export default {
     const loading = ref(false);
     const error = ref('');
 
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
     const handleLogin = async () => {
       loading.value = true;
       error.value = '';
 
       try {
-        // Récupérer les credentials stockés
-        const storedUsername = await localforage.getItem('admin_username') || 'admin';
-        const storedPassword = await localforage.getItem('admin_password') || 'kiscouture2025';
+        // Vérifier les credentials via l'API backend
+        const response = await axios.post(`${API_URL}/auth/login`, {
+          username: username.value,
+          password: password.value
+        });
 
-        // Vérifier les credentials
-        if (username.value === storedUsername && password.value === storedPassword) {
-          // Enregistrer la session
+        if (response.data.success) {
+          // Enregistrer la session localement
           await localforage.setItem('isAuthenticated', true);
           await localforage.setItem('loginTime', new Date().toISOString());
+          await localforage.setItem('username', username.value);
           
           // Rediriger vers le dashboard
           router.push('/dashboard');
-        } else {
-          error.value = 'Nom d\'utilisateur ou mot de passe incorrect';
         }
       } catch (err) {
-        error.value = 'Erreur de connexion. Veuillez réessayer.';
+        if (err.response && err.response.status === 401) {
+          error.value = 'Nom d\'utilisateur ou mot de passe incorrect';
+        } else if (err.response && err.response.data) {
+          error.value = err.response.data.error || 'Erreur de connexion';
+        } else {
+          error.value = 'Erreur de connexion au serveur. Vérifiez votre connexion internet.';
+        }
         console.error(err);
       } finally {
         loading.value = false;

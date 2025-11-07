@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 
 load_dotenv()
 
@@ -22,6 +23,25 @@ db = SQLAlchemy(app)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Models
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
 class Client(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nom = db.Column(db.String(100), nullable=False)
@@ -49,18 +69,18 @@ class Measurement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)
     
-    # Mesures
-    do = db.Column(db.Float)  # Dos
-    poitrine = db.Column(db.Float)
-    taille = db.Column(db.Float)
-    longueur = db.Column(db.Float)
-    manche = db.Column(db.Float)
-    tour_manche = db.Column(db.Float)
-    ceinture = db.Column(db.Float)
-    bassin = db.Column(db.Float)
-    cuisse = db.Column(db.Float)
-    longueur_pantalon = db.Column(db.Float)
-    bas = db.Column(db.Float)
+    # Mesures (peuvent contenir des valeurs multiples séparées par des tirets)
+    do = db.Column(db.String(50))  # Dos (ex: "90-95" ou "90")
+    poitrine = db.Column(db.String(50))
+    taille = db.Column(db.String(50))
+    longueur = db.Column(db.String(50))
+    manche = db.Column(db.String(50))
+    tour_manche = db.Column(db.String(50))
+    ceinture = db.Column(db.String(50))
+    bassin = db.Column(db.String(50))
+    cuisse = db.Column(db.String(50))
+    longueur_pantalon = db.Column(db.String(50))
+    bas = db.Column(db.String(50))
     
     image_path = db.Column(db.String(255))  # Chemin de l'image
     
@@ -171,17 +191,17 @@ def create_measurement():
     
     measurement = Measurement(
         client_id=data['client_id'],
-        do=float(data.get('do', 0)) if data.get('do') else None,
-        poitrine=float(data.get('poitrine', 0)) if data.get('poitrine') else None,
-        taille=float(data.get('taille', 0)) if data.get('taille') else None,
-        longueur=float(data.get('longueur', 0)) if data.get('longueur') else None,
-        manche=float(data.get('manche', 0)) if data.get('manche') else None,
-        tour_manche=float(data.get('tour_manche', 0)) if data.get('tour_manche') else None,
-        ceinture=float(data.get('ceinture', 0)) if data.get('ceinture') else None,
-        bassin=float(data.get('bassin', 0)) if data.get('bassin') else None,
-        cuisse=float(data.get('cuisse', 0)) if data.get('cuisse') else None,
-        longueur_pantalon=float(data.get('longueur_pantalon', 0)) if data.get('longueur_pantalon') else None,
-        bas=float(data.get('bas', 0)) if data.get('bas') else None
+        do=data.get('do') if data.get('do') else None,
+        poitrine=data.get('poitrine') if data.get('poitrine') else None,
+        taille=data.get('taille') if data.get('taille') else None,
+        longueur=data.get('longueur') if data.get('longueur') else None,
+        manche=data.get('manche') if data.get('manche') else None,
+        tour_manche=data.get('tour_manche') if data.get('tour_manche') else None,
+        ceinture=data.get('ceinture') if data.get('ceinture') else None,
+        bassin=data.get('bassin') if data.get('bassin') else None,
+        cuisse=data.get('cuisse') if data.get('cuisse') else None,
+        longueur_pantalon=data.get('longueur_pantalon') if data.get('longueur_pantalon') else None,
+        bas=data.get('bas') if data.get('bas') else None
     )
     
     # Handle image upload
@@ -445,6 +465,96 @@ def verify_master_credentials():
             'valid': False,
             'message': 'Identifiants de récupération incorrects'
         }), 401
+
+# Routes - Authentification
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    """
+    Enregistrer un nouvel utilisateur (premier setup)
+    """
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password:
+        return jsonify({'error': 'Username et password requis'}), 400
+    
+    # Vérifier si un utilisateur existe déjà
+    existing_user = User.query.first()
+    if existing_user:
+        return jsonify({'error': 'Un utilisateur existe déjà. Utilisez /api/auth/login'}), 400
+    
+    # Créer le nouvel utilisateur
+    user = User(username=username)
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'message': 'Utilisateur créé avec succès',
+        'user': user.to_dict()
+    }), 201
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """
+    Connexion utilisateur
+    """
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+    
+    if not username or not password:
+        return jsonify({'error': 'Username et password requis'}), 400
+    
+    # Chercher l'utilisateur
+    user = User.query.filter_by(username=username).first()
+    
+    if not user or not user.check_password(password):
+        return jsonify({'error': 'Identifiants incorrects'}), 401
+    
+    return jsonify({
+        'success': True,
+        'message': 'Connexion réussie',
+        'user': user.to_dict()
+    })
+
+@app.route('/api/auth/check', methods=['GET'])
+def check_auth():
+    """
+    Vérifier si un utilisateur est déjà enregistré
+    """
+    user = User.query.first()
+    return jsonify({
+        'has_user': user is not None,
+        'user': user.to_dict() if user else None
+    })
+
+@app.route('/api/auth/reset', methods=['POST'])
+def reset_password():
+    """
+    Réinitialiser le mot de passe (via master recovery)
+    """
+    data = request.json
+    new_username = data.get('username')
+    new_password = data.get('password')
+    
+    if not new_username or not new_password:
+        return jsonify({'error': 'Username et password requis'}), 400
+    
+    # Supprimer l'ancien utilisateur et créer un nouveau
+    User.query.delete()
+    
+    user = User(username=new_username)
+    user.set_password(new_password)
+    db.session.add(user)
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'message': 'Mot de passe réinitialisé avec succès'
+    })
 
 if __name__ == '__main__':
     with app.app_context():

@@ -107,6 +107,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import localforage from 'localforage';
+import axios from 'axios';
 
 export default {
   name: 'FirstSetup',
@@ -121,11 +122,18 @@ export default {
     const error = ref('');
     const isSetupComplete = ref(false);
 
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
     onMounted(async () => {
-      // Vérifier si la configuration initiale a déjà été faite
-      const setupDone = await localforage.getItem('initial_setup_done');
-      if (setupDone) {
-        router.push('/login');
+      // Vérifier si un utilisateur existe déjà sur le backend
+      try {
+        const response = await axios.get(`${API_URL}/auth/check`);
+        if (response.data.has_user) {
+          // Un utilisateur existe, rediriger vers login
+          router.push('/login');
+        }
+      } catch (err) {
+        console.error('Erreur lors de la vérification:', err);
       }
     });
 
@@ -151,20 +159,30 @@ export default {
       loading.value = true;
 
       try {
-        // Sauvegarder les nouveaux credentials
-        await localforage.setItem('admin_username', newUsername.value);
-        await localforage.setItem('admin_password', newPassword.value);
-        await localforage.setItem('initial_setup_done', true);
-        await localforage.setItem('setup_date', new Date().toISOString());
+        // Enregistrer sur le backend
+        const response = await axios.post(`${API_URL}/auth/register`, {
+          username: newUsername.value,
+          password: newPassword.value
+        });
 
-        isSetupComplete.value = true;
+        if (response.data.success) {
+          // Marquer le setup comme terminé localement
+          await localforage.setItem('initial_setup_done', true);
+          await localforage.setItem('setup_date', new Date().toISOString());
 
-        // Rediriger après 2 secondes
-        setTimeout(() => {
-          router.push('/login');
-        }, 2000);
+          isSetupComplete.value = true;
+
+          // Rediriger après 2 secondes
+          setTimeout(() => {
+            router.push('/login');
+          }, 2000);
+        }
       } catch (err) {
-        error.value = 'Erreur lors de la sauvegarde. Veuillez réessayer.';
+        if (err.response && err.response.data) {
+          error.value = err.response.data.error || 'Erreur lors de la création du compte';
+        } else {
+          error.value = 'Erreur de connexion au serveur. Vérifiez votre connexion.';
+        }
         console.error(err);
       } finally {
         loading.value = false;
