@@ -129,6 +129,10 @@ export default {
   .dashboard-header h1 {
     font-size: 24px;
   }
+  
+  .dashboard-header .btn {
+    width: 100%;
+  }
 }
 
 .stats-grid {
@@ -138,20 +142,33 @@ export default {
   margin-top: 20px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 992px) {
   .stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+}
+
+@media (max-width: 576px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
 
 .stat-card {
   background: white;
-  padding: 30px;
+  padding: 25px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   text-align: center;
   transition: transform 0.2s;
+}
+
+@media (max-width: 768px) {
+  .stat-card {
+    padding: 20px 15px;
+  }
 }
 
 .stat-card:hover {
@@ -161,8 +178,14 @@ export default {
 
 .stat-card h3 {
   color: #7f8c8d;
-  font-size: 16px;
+  font-size: 15px;
   margin-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+  .stat-card h3 {
+    font-size: 13px;
+  }
 }
 
 .stat-number {
@@ -170,6 +193,12 @@ export default {
   font-weight: bold;
   color: #2c3e50;
   margin: 0;
+}
+
+@media (max-width: 768px) {
+  .stat-number {
+    font-size: 26px;
+  }
 }
 
 .stat-number.orange {

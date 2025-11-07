@@ -141,7 +141,8 @@
             </td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   </div>
 </template>
@@ -470,11 +471,37 @@ export default {
 .form-group input,
 .form-group select {
   width: 100%;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 15px;
   box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .form-group input,
+  .form-group select {
+    padding: 12px 14px;
+    font-size: 16px;
+  }
+}
+
+.form-group input[type="tel"] {
+  font-family: monospace;
+  letter-spacing: 0.5px;
+  font-size: 16px;
+}
+
+.form-group input[type="number"] {
+  font-family: inherit;
+}
+
+@media (max-width: 768px) {
+  .form-group input[type="tel"],
+  .form-group input[type="number"] {
+    font-size: 17px;
+    padding: 14px;
+  }
 }
 
 .form-group input:disabled {
@@ -494,14 +521,27 @@ export default {
   display: block;
 }
 
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -10px;
+  padding: 0 10px;
+}
+
 @media (max-width: 768px) {
   .table {
-    font-size: 12px;
+    font-size: 13px;
   }
   
   .table th,
   .table td {
-    padding: 8px 4px;
+    padding: 10px 6px;
+    font-size: 13px;
+  }
+  
+  .table-wrapper {
+    margin: 0 -15px;
+    padding: 0 15px;
   }
 }
 
