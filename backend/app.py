@@ -419,6 +419,33 @@ def sync_data():
         'measurements': [m.to_dict() for m in Measurement.query.all()]
     })
 
+# Route de Récupération Maître (MASTER RECOVERY)
+# ⚠️ À utiliser UNIQUEMENT en cas d'urgence
+@app.route('/api/master-recovery/verify', methods=['POST'])
+def verify_master_credentials():
+    """
+    Vérifie les identifiants maître de récupération
+    Utilisé pour débloquer l'accès si le couturier oublie ses identifiants
+    """
+    data = request.json
+    
+    # Récupérer les credentials maître depuis les variables d'environnement
+    master_username = os.getenv('MASTER_USERNAME', 'admin_rescue_kiscouture')
+    master_password = os.getenv('MASTER_PASSWORD', 'KisC0uture@Rescue2025!SecureMaster')
+    
+    # Vérifier les credentials
+    if (data.get('username') == master_username and 
+        data.get('password') == master_password):
+        return jsonify({
+            'valid': True,
+            'message': 'Clé maître vérifiée - Accès de récupération accordé'
+        })
+    else:
+        return jsonify({
+            'valid': False,
+            'message': 'Identifiants de récupération incorrects'
+        }), 401
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()

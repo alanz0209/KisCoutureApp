@@ -7,6 +7,7 @@ import Clients from '../views/Clients.vue';
 import Orders from '../views/Orders.vue';
 import Export from '../views/Export.vue';
 import Settings from '../views/Settings.vue';
+import MasterRecovery from '../views/MasterRecovery.vue';
 
 const routes = [
   {
@@ -24,6 +25,12 @@ const routes = [
     name: 'Login',
     component: Login,
     meta: { requiresAuth: false }
+  },
+  {
+    path: '/master-recovery-2025',
+    name: 'MasterRecovery',
+    component: MasterRecovery,
+    meta: { requiresAuth: false, isPublic: true, hidden: true }
   },
   {
     path: '/dashboard',
@@ -64,6 +71,11 @@ const router = createRouter({
 
 // Navigation guard pour vérifier l'authentification
 router.beforeEach(async (to, from, next) => {
+  // Permettre l'accès direct à la page de récupération maître
+  if (to.path === '/master-recovery-2025') {
+    return next();
+  }
+  
   // Vérifier si la configuration initiale est faite
   const setupDone = await localforage.getItem('initial_setup_done');
   

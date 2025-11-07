@@ -1,0 +1,171 @@
+# 🔐 SYSTÈME DE RÉCUPÉRATION MAÎTRE - INSTRUCTIONS
+
+## ⚠️ IMPORTANT - LISEZ ENTIÈREMENT
+
+Ce système vous permet de débloquer l'accès si le couturier oublie ses identifiants.
+
+---
+
+## 📋 CONFIGURATION REQUISE
+
+### 1. Variables d'Environnement sur Render (Backend)
+
+Sur Render Dashboard → Service `kis-couture-backend` → Settings → Environment Variables
+
+**Ajouter ces 2 variables :**
+
+```
+MASTER_USERNAME = admin_rescue_kiscouture
+MASTER_PASSWORD = KisC0uture@Rescue2025!SecureMaster
+```
+
+⚠️ **CHANGEZ LE MOT DE PASSE** par quelque chose de personnel et très sécurisé !
+
+**Exemple de mot de passe fort :**
+```
+MASTER_PASSWORD = VotreMotDePasseUltraSecret!2025KisCouture#Rescue
+```
+
+**Après ajout :**
+- Cliquer sur "Save Changes"
+- Le backend se redéploiera automatiquement (~2 minutes)
+
+---
+
+## 🔑 COMMENT UTILISER LA RÉCUPÉRATION
+
+### Étape 1 : Accéder à la Page Secrète
+
+**URL cachée (ne jamais partager) :**
+```
+https://kiscouture.onrender.com/master-recovery-2025
+```
+
+Cette URL n'est visible nulle part dans l'interface - **NOTEZ-LA EN SÉCURITÉ !**
+
+### Étape 2 : Se Connecter avec la Clé Maître
+
+1. Ouvrir l'URL secrète
+2. Entrer vos identifiants maître :
+   - Username : `admin_rescue_kiscouture`
+   - Password : (celui que vous avez configuré sur Render)
+
+### Étape 3 : Réinitialiser l'Accès
+
+Une fois authentifié, vous avez 2 options :
+
+**Option A : Réinitialiser aux Valeurs par Défaut**
+- Username : `admin`
+- Password : `kiscouture2025`
+- Partagez ensuite ces identifiants au couturier
+
+**Option B : Configurer de Nouveaux Identifiants**
+- Redirige vers la page de configuration
+- Le couturier peut définir de nouveaux identifiants personnalisés
+- Plus sécurisé que l'option A
+
+---
+
+## 🔒 SÉCURITÉ
+
+### Fichiers Protégés (NE JAMAIS COMMITTER)
+
+- `backend/.env` → **DÉJÀ PROTÉGÉ** par `.gitignore`
+- Contient vos identifiants maître
+
+### Vérification Git
+
+Vérifiez que `.env` n'est PAS dans votre repo :
+
+```bash
+git status
+```
+
+Si vous voyez `backend/.env` → **NE PAS COMMIT !**
+
+### Bonnes Pratiques
+
+✅ **À FAIRE :**
+- Noter l'URL de récupération dans un endroit sûr (pas dans le code)
+- Changer le mot de passe maître régulièrement
+- Ne jamais partager les identifiants maître
+
+❌ **À NE PAS FAIRE :**
+- Partager l'URL `/master-recovery-2025` avec le couturier
+- Committer le fichier `.env` sur GitHub
+- Utiliser un mot de passe faible
+
+---
+
+## 📝 SCÉNARIO D'UTILISATION
+
+**Le couturier vous appelle :**
+> "J'ai oublié mon mot de passe, je ne peux plus me connecter !"
+
+**Vous faites :**
+
+1. Ouvrir `https://kiscouture.onrender.com/master-recovery-2025`
+2. Se connecter avec vos identifiants maître
+3. Choisir "Réinitialiser aux Valeurs par Défaut"
+4. Informer le couturier :
+   ```
+   Identifiants temporaires :
+   Username : admin
+   Password : kiscouture2025
+   
+   Changez-les dans Paramètres après connexion !
+   ```
+
+---
+
+## 🛠️ DÉPANNAGE
+
+### Erreur "Identifiants maître incorrects"
+
+**Causes possibles :**
+- Variables d'environnement pas configurées sur Render
+- Mot de passe incorrect
+- Backend pas redéployé après ajout des variables
+
+**Solution :**
+1. Vérifier les variables sur Render Dashboard
+2. Redéployer manuellement le backend si nécessaire
+
+### Page blanche sur `/master-recovery-2025`
+
+**Cause :** Frontend pas déployé avec la nouvelle route
+
+**Solution :**
+1. Vérifier que le code est poussé sur GitHub
+2. Redéployer le frontend sur Render
+
+---
+
+## 📞 CONTACTS D'URGENCE
+
+**Si vous perdez AUSSI vos identifiants maître :**
+
+1. Se connecter à Render Dashboard
+2. Backend → Settings → Environment Variables
+3. Voir/Modifier `MASTER_PASSWORD`
+4. Redéployer le backend
+
+**Fichier local de secours :**
+- `backend/.env` (sur votre ordinateur uniquement)
+- Contient vos identifiants maître en clair
+
+---
+
+## ✅ CHECKLIST POST-INSTALLATION
+
+- [ ] Variables `MASTER_USERNAME` et `MASTER_PASSWORD` ajoutées sur Render
+- [ ] Backend redéployé avec succès
+- [ ] Frontend redéployé avec la nouvelle route
+- [ ] URL de récupération testée et fonctionnelle
+- [ ] URL de récupération notée dans un endroit sûr
+- [ ] Fichier `.env` NON présent dans Git
+
+---
+
+**Date de création :** {{ DATE }}
+**Dernière mise à jour :** {{ DATE }}

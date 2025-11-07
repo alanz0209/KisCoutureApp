@@ -59,6 +59,10 @@ backend/uploads/*
 .env.local
 .env.*.local
 
+# ⚠️ FICHIERS SECRETS - NE JAMAIS COMMITTER
+backend/.env
+*.env
+
 # Logs
 *.log
 logs/
