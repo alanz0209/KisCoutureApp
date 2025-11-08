@@ -654,9 +654,17 @@ def register():
     # Check if user already exists
     existing_user = User.query.first()
     if existing_user:
-        return jsonify({'error': 'Un utilisateur existe déjà'}), 400
+        # If user exists, update the PIN and email instead of creating a new one
+        existing_user.set_pin(pin)
+        existing_user.email = email
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'message': 'Compte mis à jour avec succès',
+            'user': existing_user.to_dict()
+        }), 200
     
-    # Create new user
+    # Create new user if none exists
     user = User(username=username, email=email)
     user.set_password(password)
     user.set_pin(pin)  # Set the PIN hash
