@@ -3,13 +3,6 @@
 Script d'initialisation de la base de données
 Crée toutes les tables si elles n'existent pas
 """
-import sys
-import importlib
-
-# Force reload of the app module to get the latest model definition
-if 'app' in sys.modules:
-    importlib.reload(sys.modules['app'])
-
 from app import app, db
 
 if __name__ == '__main__':

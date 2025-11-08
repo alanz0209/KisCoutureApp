@@ -87,14 +87,6 @@
               <label>Bas (cm)</label>
               <input type="number" step="0.1" v-model="formData.bas" />
             </div>
-            <div class="form-group">
-              <label>Longueur (genou) (cm)</label>
-              <input type="number" step="0.1" v-model="formData.longueur_genou" />
-            </div>
-            <div class="form-group">
-              <label>Tour (mollet) (cm)</label>
-              <input type="number" step="0.1" v-model="formData.tour_mollet" />
-            </div>
             <div class="form-group full-width">
               <label>Image de référence (optionnelle)</label>
               <input type="file" accept="image/*" @change="handleImageChange" />
@@ -125,8 +117,6 @@
               <p v-if="measurement.cuisse"><strong>Cuisse:</strong> {{ measurement.cuisse }} cm</p>
               <p v-if="measurement.longueur_pantalon"><strong>Long. Pantalon:</strong> {{ measurement.longueur_pantalon }} cm</p>
               <p v-if="measurement.bas"><strong>Bas:</strong> {{ measurement.bas }} cm</p>
-              <p v-if="measurement.longueur_genou"><strong>Long. (genou):</strong> {{ measurement.longueur_genou }} cm</p>
-              <p v-if="measurement.tour_mollet"><strong>Tour (mollet):</strong> {{ measurement.tour_mollet }} cm</p>
             </div>
             <div v-if="measurement.image_path || measurement.image_data" class="image-preview">
               <img 
@@ -172,8 +162,6 @@ export default {
       cuisse: '',
       longueur_pantalon: '',
       bas: '',
-      longueur_genou: '',  // New field
-      tour_mollet: '',     // New field
       image: null
     });
 
@@ -247,8 +235,6 @@ export default {
         cuisse: '',
         longueur_pantalon: '',
         bas: '',
-        longueur_genou: '',  // New field
-        tour_mollet: '',     // New field
         image: null
       };
     };
@@ -285,6 +271,18 @@ export default {
   padding: 20px;
 }
 
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 10px;
+  }
+}
+
 .card {
   background: white;
   border-radius: 8px;
@@ -293,10 +291,31 @@ export default {
   margin-bottom: 20px;
 }
 
+@media (max-width: 768px) {
+  .card {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 12px;
+    margin-bottom: 15px;
+  }
+}
+
 .client-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+@media (max-width: 768px) {
+  .client-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
 }
 
 .client-list {
@@ -306,6 +325,21 @@ export default {
   margin-top: 20px;
 }
 
+@media (max-width: 768px) {
+  .client-list {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .client-list {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
 .client-card {
   background: white;
   padding: 20px;
@@ -313,6 +347,12 @@ export default {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
+}
+
+@media (max-width: 480px) {
+  .client-card {
+    padding: 15px;
+  }
 }
 
 .client-card:hover {
@@ -326,10 +366,24 @@ export default {
   color: #2c3e50;
 }
 
+@media (max-width: 480px) {
+  .client-card h3 {
+    font-size: 16px;
+    margin: 0 0 8px 0;
+  }
+}
+
 .client-card p {
   margin: 5px 0;
   color: #7f8c8d;
   font-size: 14px;
+}
+
+@media (max-width: 480px) {
+  .client-card p {
+    font-size: 13px;
+    margin: 4px 0;
+  }
 }
 
 .measurements-grid {
@@ -337,6 +391,21 @@ export default {
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 15px;
   margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+  .measurements-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .measurements-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 15px;
+  }
 }
 
 .full-width {
@@ -349,14 +418,32 @@ export default {
   font-size: 12px;
 }
 
+@media (max-width: 480px) {
+  .full-width small {
+    font-size: 11px;
+  }
+}
+
 .form-group {
   margin-bottom: 15px;
+}
+
+@media (max-width: 480px) {
+  .form-group {
+    margin-bottom: 12px;
+  }
 }
 
 .form-group label {
   display: block;
   margin-bottom: 5px;
   font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .form-group label {
+    font-size: 14px;
+  }
 }
 
 .form-group input {
@@ -368,10 +455,30 @@ export default {
   box-sizing: border-box;
 }
 
+@media (max-width: 768px) {
+  .form-group input {
+    padding: 12px 14px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-group input {
+    padding: 10px 12px;
+    font-size: 16px;
+  }
+}
+
 .measurements-history {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+@media (max-width: 480px) {
+  .measurements-history {
+    gap: 15px;
+  }
 }
 
 .measurement-item {
@@ -381,9 +488,29 @@ export default {
   border-left: 4px solid #3498db;
 }
 
+@media (max-width: 768px) {
+  .measurement-item {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .measurement-item {
+    padding: 12px;
+    border-radius: 6px;
+  }
+}
+
 .measurement-item h3 {
   color: #2c3e50;
   margin-bottom: 15px;
+}
+
+@media (max-width: 480px) {
+  .measurement-item h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
 }
 
 .measurement-item p {
@@ -391,9 +518,22 @@ export default {
   color: #555;
 }
 
+@media (max-width: 480px) {
+  .measurement-item p {
+    font-size: 14px;
+    margin: 4px 0;
+  }
+}
+
 .image-preview {
   margin-top: 15px;
   text-align: center;
+}
+
+@media (max-width: 480px) {
+  .image-preview {
+    margin-top: 12px;
+  }
 }
 
 .image-preview img {
@@ -403,6 +543,20 @@ export default {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+@media (max-width: 768px) {
+  .image-preview img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .image-preview img {
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+}
+
 .btn {
   padding: 10px 20px;
   border: none;
@@ -410,6 +564,13 @@ export default {
   cursor: pointer;
   font-size: 14px;
   transition: all 0.3s ease;
+}
+
+@media (max-width: 480px) {
+  .btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
 }
 
 .btn-primary {
@@ -440,4 +601,15 @@ export default {
   border-radius: 12px;
   font-weight: normal;
 }
-</style>
+
+@media (max-width: 480px) {
+  .badge-offline {
+    margin-left: 8px;
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+}
+ 
+ < / s t y l e > 
+ 
+ 
