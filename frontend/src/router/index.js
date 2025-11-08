@@ -4,7 +4,6 @@ import axios from 'axios';
 import FirstSetup from '../views/FirstSetup.vue';
 import Login from '../views/Login.vue';
 import PinLogin from '../views/PinLogin.vue';
-import Register from '../views/Register.vue';
 import Dashboard from '../views/Dashboard.vue';
 import Clients from '../views/Clients.vue';
 import Orders from '../views/Orders.vue';
@@ -30,12 +29,6 @@ const routes = [
     name: 'Login',
     component: Login,
     meta: { requiresAuth: false }
-  },
-  {
-    path: '/register',
-    name: 'Register',
-    component: Register,
-    meta: { requiresAuth: false, isPublic: true }
   },
   {
     path: '/pin-login',
