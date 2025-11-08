@@ -16,7 +16,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-CORS(app)
+# Configure CORS to allow requests from the frontend domain
+CORS(app, origins=[
+    "https://kiscouture.onrender.com",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+])
 db = SQLAlchemy(app)
 
 # Create upload folder if it doesn't exist
