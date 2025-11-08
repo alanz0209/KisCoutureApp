@@ -701,6 +701,7 @@ export default {
   .client-info h3 {
     font-size: 15px;
     margin: 0 0 6px 0;
+  }
 }
 
 .client-info p {
@@ -1319,8 +1320,4 @@ export default {
   border-radius: 12px;
   font-weight: normal;
 }
-
- 
- < / s t y l e > 
- 
- 
+</style>
