@@ -21,9 +21,7 @@
         <p class="card-description">Gérer votre compte et vos préférences</p>
 
         <div class="account-actions">
-          <button @click="handleLogout" class="btn-logout">
-            🚪 Déconnexion
-          </button>
+          <p>Application accessible sans authentification</p>
         </div>
       </div>
     </div>
@@ -31,25 +29,11 @@
 </template>
 
 <script>
-import { useRouter } from 'vue-router';
-import { showNotification } from '../utils/notifications';
-
 export default {
   name: 'Settings',
   setup() {
-    const router = useRouter();
-
-    const handleLogout = () => {
-      // Show confirmation dialog
-      if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-        // Redirect to PIN login
-        showNotification('Succès', 'Déconnexion réussie', 'success');
-        router.push('/pin-login');
-      }
-    };
-
     return {
-      handleLogout
+      // No functionality needed since we removed authentication
     };
   }
 };
@@ -108,21 +92,9 @@ h1 {
   text-align: center;
 }
 
-.btn-logout {
-  padding: 12px 24px;
-  background: #e74c3c;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-logout:hover {
-  background: #c0392b;
-  transform: translateY(-2px);
+.account-actions p {
+  color: #7f8c8d;
+  font-style: italic;
 }
 
 @media (max-width: 768px) {
