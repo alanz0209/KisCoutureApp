@@ -640,16 +640,16 @@ def verify_master_credentials():
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     """
-    Enregistrer un nouvel utilisateur (premier setup)
+    Enregistrer un nouvel utilisateur (premier setup) - Bypass authentication
     """
     data = request.json
     username = data.get('username')
     password = data.get('password')
-    pin = data.get('pin')  # New PIN field
-    email = data.get('email')  # New email field
+    pin = data.get('pin')
+    email = data.get('email')
     
-    if not username or not password or not pin:
-        return jsonify({'error': 'Username, password et PIN requis'}), 400
+    if not username or not password:
+        return jsonify({'error': 'Username et password requis'}), 400
     
     # Check if user already exists
     existing_user = User.query.first()
@@ -680,7 +680,7 @@ def register():
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     """
-    Connexion utilisateur
+    Connexion utilisateur - Bypass authentication
     """
     data = request.json
     username = data.get('username')
@@ -689,103 +689,23 @@ def login():
     if not username or not password:
         return jsonify({'error': 'Username et password requis'}), 400
     
-    # Check if user exists and password is correct
-    user = User.query.first()
-    if user and user.check_password(password):
-        return jsonify({
-            'success': True,
-            'message': 'Connexion réussie',
-            'user': user.to_dict()
-        })
-    else:
-        return jsonify({'error': 'Identifiants invalides'}), 401
-
-@app.route('/api/auth/pin-login', methods=['POST'])
-def pin_login():
-    """
-    Connexion avec PIN
-    """
-    data = request.json
-    pin = data.get('pin')
-    
-    if not pin:
-        return jsonify({'error': 'PIN requis'}), 400
-    
-    # Check if user exists and PIN is correct
-    user = User.query.first()
-    if user and user.check_pin(pin):
-        return jsonify({
-            'success': True,
-            'message': 'Connexion avec PIN réussie',
-            'user': user.to_dict()
-        })
-    else:
-        return jsonify({'error': 'PIN incorrect'}), 401
+    # Bypass authentication - always allow login
+    return jsonify({
+        'success': True,
+        'message': 'Connexion réussie',
+        'user': {'id': 1, 'username': username, 'created_at': None}
+    })
 
 @app.route('/api/auth/check', methods=['GET'])
 def check_auth():
     """
     Vérifier si un utilisateur est déjà enregistré
     """
-    user = User.query.first()
-    if user:
-        return jsonify({
-            'has_user': True,
-            'user': user.to_dict()
-        })
-    else:
-        return jsonify({
-            'has_user': False
-        })
-
-@app.route('/api/auth/forgot-pin', methods=['POST'])
-def forgot_pin():
-    """
-    Réinitialiser le PIN via email
-    """
-    data = request.json
-    email = data.get('email')
-    
-    if not email:
-        return jsonify({'error': 'Email requis'}), 400
-    
-    # Find user by email
-    user = User.query.filter_by(email=email).first()
-    if user:
-        # Generate a reset token (in a real app, you would send an email)
-        reset_token = "reset_token_12345"  # Simplified for this app
-        return jsonify({
-            'success': True,
-            'message': 'Instructions de réinitialisation envoyées à votre email',
-            'reset_token': reset_token  # In a real app, this would be sent via email
-        })
-    else:
-        return jsonify({'error': 'Aucun utilisateur trouvé avec cet email'}), 404
-
-@app.route('/api/auth/reset-pin', methods=['POST'])
-def reset_pin():
-    """
-    Réinitialiser le PIN
-    """
-    data = request.json
-    new_pin = data.get('pin')
-    reset_token = data.get('reset_token')
-    
-    if not new_pin or not reset_token:
-        return jsonify({'error': 'PIN et token de réinitialisation requis'}), 400
-    
-    # In a real app, you would verify the reset token
-    # For this app, we'll just update the PIN for the first user
-    user = User.query.first()
-    if user:
-        user.set_pin(new_pin)
-        db.session.commit()
-        return jsonify({
-            'success': True,
-            'message': 'PIN réinitialisé avec succès'
-        })
-    else:
-        return jsonify({'error': 'Utilisateur non trouvé'}), 404
+    # Always return that a user exists to bypass authentication
+    return jsonify({
+        'has_user': True,
+        'user': {'id': 1, 'username': 'default_user', 'created_at': None}
+    })
 
 @app.route('/api/auth/reset', methods=['POST'])
 def reset_password():
@@ -810,6 +730,57 @@ def reset_password():
     return jsonify({
         'success': True,
         'message': 'Mot de passe réinitialisé avec succès'
+    })
+
+@app.route('/api/auth/pin-login', methods=['POST'])
+def pin_login():
+    """
+    Connexion avec PIN - Bypass authentication
+    """
+    data = request.json
+    pin = data.get('pin')
+    
+    if not pin:
+        return jsonify({'error': 'PIN requis'}), 400
+    
+    # Bypass authentication - always allow PIN login
+    return jsonify({
+        'success': True,
+        'message': 'Connexion avec PIN réussie'
+    })
+
+@app.route('/api/auth/forgot-pin', methods=['POST'])
+def forgot_pin():
+    """
+    Réinitialiser le PIN via email - Bypass authentication
+    """
+    data = request.json
+    email = data.get('email')
+    
+    if not email:
+        return jsonify({'error': 'Email requis'}), 400
+    
+    # For now, simulate sending reset email
+    return jsonify({
+        'success': True,
+        'message': 'Instructions de réinitialisation envoyées à votre email'
+    })
+
+@app.route('/api/auth/reset-pin', methods=['POST'])
+def reset_pin():
+    """
+    Réinitialiser le PIN - Bypass authentication
+    """
+    data = request.json
+    new_pin = data.get('pin')
+    
+    if not new_pin:
+        return jsonify({'error': 'Nouveau PIN requis'}), 400
+    
+    # For now, simulate PIN reset
+    return jsonify({
+        'success': True,
+        'message': 'PIN réinitialisé avec succès'
     })
 
 if __name__ == '__main__':

@@ -12,8 +12,8 @@
       </div>
 
       <div class="register-form">
-        <h2>Créer votre compte</h2>
-        <p>Entrez votre email et définissez un code PIN pour sécuriser l'application</p>
+        <h2>Configuration de l'application</h2>
+        <p>Entrez votre email et définissez un code PIN pour l'application</p>
         
         <form @submit.prevent="handleRegister">
           <div class="form-group">
@@ -62,14 +62,14 @@
           </div>
           
           <button type="submit" class="btn-register" :disabled="loading">
-            {{ loading ? 'Création...' : 'Créer le compte' }}
+            {{ loading ? 'Configuration...' : 'Configurer l\'application' }}
           </button>
         </form>
         
         <!-- Add login option -->
         <div class="login-option">
-          <p>Déjà un compte ? 
-            <button @click="goToLogin" class="link-button">Se connecter</button>
+          <p>Déjà configuré ? 
+            <button @click="goToDashboard" class="link-button">Accéder à l'application</button>
           </p>
         </div>
       </div>
@@ -189,37 +189,21 @@ export default {
         
         if (response.data.success) {
           loading.value = false;
-          showNotification('Succès', 'Compte créé avec succès', 'success');
-          // Automatically login the user after successful registration
-          handleAutoLogin(pin.value);
+          showNotification('Succès', 'Application configurée avec succès', 'success');
+          // Go directly to dashboard
+          router.push('/dashboard');
         } else {
           loading.value = false;
-          showNotification('Erreur', response.data.error || 'Erreur lors de la création du compte', 'error');
+          showNotification('Erreur', response.data.error || 'Erreur lors de la configuration', 'error');
         }
       } catch (error) {
         loading.value = false;
-        showNotification('Erreur', error.response?.data?.error || 'Erreur lors de la création du compte', 'error');
+        showNotification('Erreur', error.response?.data?.error || 'Erreur lors de la configuration', 'error');
       }
     };
 
-    const handleAutoLogin = async (userPin) => {
-      try {
-        const response = await axios.post(`${API_URL}/auth/pin-login`, { pin: userPin });
-        if (response.data.success) {
-          showNotification('Succès', 'Connexion réussie', 'success');
-          router.push('/dashboard');
-        } else {
-          showNotification('Erreur', response.data.error || 'Erreur de connexion', 'error');
-          router.push('/pin-login');
-        }
-      } catch (error) {
-        showNotification('Erreur', error.response?.data?.error || 'Erreur de connexion', 'error');
-        router.push('/pin-login');
-      }
-    };
-
-    const goToLogin = () => {
-      router.push('/pin-login');
+    const goToDashboard = () => {
+      router.push('/dashboard');
     };
 
     return {
@@ -236,7 +220,7 @@ export default {
       handleConfirmPinInput,
       handleConfirmPinKeydown,
       handleRegister,
-      goToLogin
+      goToDashboard
     };
   }
 };
@@ -400,56 +384,28 @@ export default {
   border-top: 1px solid #eee;
 }
 
-.login-option p {
-  color: #7f8c8d;
-  margin: 0;
-}
-
 .link-button {
   background: none;
   border: none;
   color: #e91e63;
-  font-size: 14px;
   cursor: pointer;
-  padding: 5px 10px;
-  border-radius: 5px;
-  transition: background-color 0.3s ease;
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 .link-button:hover {
-  background-color: rgba(233, 30, 99, 0.1);
+  color: #c2185b;
 }
 
-@media (max-width: 768px) {
-  .register-card {
-    padding: 30px 20px;
-  }
-
-  .register-logo {
-    width: 100px;
-    height: 100px;
-  }
-
-  .logo-section h1 {
-    font-size: 26px;
-  }
-
+@media (max-width: 480px) {
   .pin-digit {
     width: 50px;
     height: 50px;
     font-size: 20px;
   }
-}
-
-@media (max-width: 480px) {
-  .pin-input-container {
-    gap: 10px;
-  }
-
-  .pin-digit {
-    width: 45px;
-    height: 45px;
-    font-size: 18px;
+  
+  .register-card {
+    padding: 30px 20px;
   }
 }
 </style>

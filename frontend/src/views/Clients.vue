@@ -261,6 +261,7 @@ export default {
     const clients = ref([]);
     const selectedClient = ref(null);
     const clientMeasurements = ref(null);
+    const clientOrders = ref([]);
     const showForm = ref(false);
     const editMode = ref(false);
     const searchQuery = ref(''); // New search query ref
