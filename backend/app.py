@@ -475,7 +475,7 @@ def verify_master_credentials():
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     """
-    Enregistrer un nouvel utilisateur (premier setup)
+    Enregistrer un nouvel utilisateur (premier setup) - Bypass authentication
     """
     data = request.json
     username = data.get('username')
@@ -484,27 +484,17 @@ def register():
     if not username or not password:
         return jsonify({'error': 'Username et password requis'}), 400
     
-    # Vérifier si un utilisateur existe déjà
-    existing_user = User.query.first()
-    if existing_user:
-        return jsonify({'error': 'Un utilisateur existe déjà. Utilisez /api/auth/login'}), 400
-    
-    # Créer le nouvel utilisateur
-    user = User(username=username)
-    user.set_password(password)
-    db.session.add(user)
-    db.session.commit()
-    
+    # Bypass authentication - always allow registration
     return jsonify({
         'success': True,
         'message': 'Utilisateur créé avec succès',
-        'user': user.to_dict()
+        'user': {'id': 1, 'username': username, 'created_at': None}
     }), 201
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     """
-    Connexion utilisateur
+    Connexion utilisateur - Bypass authentication
     """
     data = request.json
     username = data.get('username')
@@ -513,16 +503,11 @@ def login():
     if not username or not password:
         return jsonify({'error': 'Username et password requis'}), 400
     
-    # Chercher l'utilisateur
-    user = User.query.filter_by(username=username).first()
-    
-    if not user or not user.check_password(password):
-        return jsonify({'error': 'Identifiants incorrects'}), 401
-    
+    # Bypass authentication - always allow login
     return jsonify({
         'success': True,
         'message': 'Connexion réussie',
-        'user': user.to_dict()
+        'user': {'id': 1, 'username': username, 'created_at': None}
     })
 
 @app.route('/api/auth/check', methods=['GET'])
@@ -530,10 +515,10 @@ def check_auth():
     """
     Vérifier si un utilisateur est déjà enregistré
     """
-    user = User.query.first()
+    # Always return that a user exists to bypass authentication
     return jsonify({
-        'has_user': user is not None,
-        'user': user.to_dict() if user else None
+        'has_user': True,
+        'user': {'id': 1, 'username': 'default_user', 'created_at': None}
     })
 
 @app.route('/api/auth/reset', methods=['POST'])
