@@ -7,9 +7,12 @@ from app import app, db
 
 if __name__ == '__main__':
     with app.app_context():
-        print("🔧 Création des tables de la base de données...")
+        print("🔧 Recréation des tables de la base de données...")
+        # Supprimer toutes les tables existantes
+        db.drop_all()
+        # Créer toutes les tables avec le nouveau schéma
         db.create_all()
-        print("✅ Tables créées avec succès !")
+        print("✅ Tables recréées avec succès !")
         print("📊 Tables disponibles:")
         
         # Vérifier les tables créées
@@ -22,4 +25,10 @@ if __name__ == '__main__':
         print("\n🔍 Colonnes de la table 'measurement':")
         measurement_columns = inspector.get_columns('measurement')
         for col in measurement_columns:
+            print(f"  - {col['name']} ({col['type']})")
+            
+        # Vérifier les colonnes de la table user
+        print("\n🔍 Colonnes de la table 'user':")
+        user_columns = inspector.get_columns('user')
+        for col in user_columns:
             print(f"  - {col['name']} ({col['type']})")

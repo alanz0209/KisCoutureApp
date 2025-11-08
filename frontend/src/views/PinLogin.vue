@@ -75,7 +75,10 @@
 <script>
 import { ref, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
 import { showNotification } from '../utils/notifications';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export default {
   name: 'PinLogin',
@@ -87,6 +90,7 @@ export default {
     const email = ref('');
     const showForgotPin = ref(false);
     const loading = ref(false);
+    const resetToken = ref('');
 
     // Focus first PIN input on mount
     onMounted(() => {
@@ -129,15 +133,18 @@ export default {
       loading.value = true;
       
       try {
-        // Simulate PIN verification
-        setTimeout(() => {
+        const response = await axios.post(`${API_URL}/auth/pin-login`, { pin: pin.value });
+        if (response.data.success) {
           loading.value = false;
           showNotification('Succès', 'Connexion réussie', 'success');
           router.push('/dashboard');
-        }, 1000);
+        } else {
+          loading.value = false;
+          showNotification('Erreur', response.data.error || 'PIN incorrect', 'error');
+        }
       } catch (error) {
         loading.value = false;
-        showNotification('Erreur', 'PIN incorrect', 'error');
+        showNotification('Erreur', error.response?.data?.error || 'Erreur de connexion', 'error');
       }
     };
 
@@ -150,17 +157,21 @@ export default {
       loading.value = true;
       
       try {
-        // Simulate forgot PIN request
-        setTimeout(() => {
+        const response = await axios.post(`${API_URL}/auth/forgot-pin`, { email: email.value });
+        if (response.data.success) {
           loading.value = false;
-          showNotification('Succès', 'Instructions envoyées à votre email', 'success');
+          showNotification('Succès', response.data.message, 'success');
+          resetToken.value = response.data.reset_token;
+          // Show reset PIN form
           showForgotPin.value = false;
-          // Reset form
-          email.value = '';
-        }, 1000);
+          // In a real app, you would redirect to a reset PIN page or show a reset form
+        } else {
+          loading.value = false;
+          showNotification('Erreur', response.data.error || 'Erreur lors de l\'envoi', 'error');
+        }
       } catch (error) {
         loading.value = false;
-        showNotification('Erreur', 'Erreur lors de l\'envoi', 'error');
+        showNotification('Erreur', error.response?.data?.error || 'Erreur lors de l\'envoi', 'error');
       }
     };
 

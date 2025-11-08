@@ -7,8 +7,7 @@
 </template>
 
 <script>
-import { onMounted, onBeforeMount } from 'vue';
-import { useRouter } from 'vue-router';
+import { onMounted } from 'vue';
 import Navbar from './components/Navbar.vue';
 import NotificationContainer from './components/NotificationContainer.vue';
 import { requestNotificationPermission } from './utils/notifications';
@@ -21,15 +20,6 @@ export default {
     NotificationContainer
   },
   setup() {
-    const router = useRouter();
-    
-    onBeforeMount(() => {
-      // Redirect to PIN login on app start
-      if (window.location.pathname === '/') {
-        router.push('/pin-login');
-      }
-    });
-    
     onMounted(async () => {
       requestNotificationPermission();
       

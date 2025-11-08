@@ -32,6 +32,8 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+    pin_hash = db.Column(db.String(255))  # New field for PIN
+    email = db.Column(db.String(120))  # New field for email
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def set_password(self, password):
@@ -40,10 +42,17 @@ class User(db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
+    def set_pin(self, pin):
+        self.pin_hash = generate_password_hash(pin)
+    
+    def check_pin(self, pin):
+        return check_password_hash(self.pin_hash, pin)
+    
     def to_dict(self):
         return {
             'id': self.id,
             'username': self.username,
+            'email': self.email,
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
@@ -86,6 +95,7 @@ class Measurement(db.Model):
     cuisse = db.Column(db.String(50))
     longueur_pantalon = db.Column(db.String(50))
     bas = db.Column(db.String(50))
+    description = db.Column(db.Text)  # New field for additional information
     
     image_path = db.Column(db.String(255))  # Chemin de l'image
     
@@ -107,6 +117,7 @@ class Measurement(db.Model):
             'cuisse': self.cuisse,
             'longueur_pantalon': self.longueur_pantalon,
             'bas': self.bas,
+            'description': self.description,  # New field
             'image_path': self.image_path,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
@@ -190,6 +201,15 @@ def get_client_measurements(client_id):
     measurements = Measurement.query.filter_by(client_id=client_id).order_by(Measurement.created_at.desc()).all()
     return jsonify([m.to_dict() for m in measurements])
 
+@app.route('/api/measurements', methods=['GET'])
+def get_all_measurements():
+    """Get all measurements for all clients"""
+    try:
+        measurements = Measurement.query.all()
+        return jsonify([m.to_dict() for m in measurements])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/measurements', methods=['POST'])
 def create_measurement():
     data = request.form
@@ -206,7 +226,8 @@ def create_measurement():
         bassin=data.get('bassin') if data.get('bassin') else None,
         cuisse=data.get('cuisse') if data.get('cuisse') else None,
         longueur_pantalon=data.get('longueur_pantalon') if data.get('longueur_pantalon') else None,
-        bas=data.get('bas') if data.get('bas') else None
+        bas=data.get('bas') if data.get('bas') else None,
+        description=data.get('description') if data.get('description') else None  # New field
     )
     
     # Handle image upload
@@ -238,6 +259,7 @@ def update_measurement(id):
     measurement.cuisse = float(data.get('cuisse', 0)) if data.get('cuisse') else measurement.cuisse
     measurement.longueur_pantalon = float(data.get('longueur_pantalon', 0)) if data.get('longueur_pantalon') else measurement.longueur_pantalon
     measurement.bas = float(data.get('bas', 0)) if data.get('bas') else measurement.bas
+    measurement.description = data.get('description') if data.get('description') else measurement.description  # New field
     
     # Handle image upload
     if 'image' in request.files:
@@ -276,6 +298,7 @@ def update_client_measurement(client_id):
         measurement.cuisse = float(data.get('cuisse', 0)) if data.get('cuisse') else None
         measurement.longueur_pantalon = float(data.get('longueur_pantalon', 0)) if data.get('longueur_pantalon') else None
         measurement.bas = float(data.get('bas', 0)) if data.get('bas') else None
+        measurement.description = data.get('description') if data.get('description') else None  # New field
     else:
         # Création
         measurement = Measurement(
@@ -290,7 +313,8 @@ def update_client_measurement(client_id):
             bassin=float(data.get('bassin', 0)) if data.get('bassin') else None,
             cuisse=float(data.get('cuisse', 0)) if data.get('cuisse') else None,
             longueur_pantalon=float(data.get('longueur_pantalon', 0)) if data.get('longueur_pantalon') else None,
-            bas=float(data.get('bas', 0)) if data.get('bas') else None
+            bas=float(data.get('bas', 0)) if data.get('bas') else None,
+            description=data.get('description') if data.get('description') else None  # New field
         )
         db.session.add(measurement)
     
@@ -406,43 +430,184 @@ def uploaded_file(filename):
 # Sync endpoint for offline/online synchronization
 @app.route('/api/sync', methods=['POST'])
 def sync_data():
-    data = request.json
-    
-    # Process offline changes
-    if 'clients' in data:
-        for client_data in data['clients']:
-            if 'id' in client_data and client_data['id']:
-                # Update existing
-                client = Client.query.get(client_data['id'])
-                if client:
-                    for key, value in client_data.items():
-                        if key != 'id' and hasattr(client, key):
-                            setattr(client, key, value)
-            else:
-                # Create new
-                client = Client(**{k: v for k, v in client_data.items() if k != 'id'})
-                db.session.add(client)
-    
-    if 'orders' in data:
-        for order_data in data['orders']:
-            if 'id' in order_data and order_data['id']:
-                order = Order.query.get(order_data['id'])
-                if order:
-                    for key, value in order_data.items():
-                        if key != 'id' and hasattr(order, key):
-                            setattr(order, key, value)
-            else:
-                order = Order(**{k: v for k, v in order_data.items() if k != 'id'})
-                db.session.add(order)
-    
-    db.session.commit()
-    
-    # Return all current data
-    return jsonify({
-        'clients': [c.to_dict() for c in Client.query.all()],
-        'orders': [o.to_dict() for o in Order.query.all()],
-        'measurements': [m.to_dict() for m in Measurement.query.all()]
-    })
+    """Endpoint for syncing data from client to server"""
+    try:
+        data = request.json
+        sync_timestamp = datetime.utcnow()
+        
+        # Process client updates
+        if 'clients' in data:
+            for client_data in data['clients']:
+                # For temporary clients, we need to create new records without the temp ID
+                if str(client_data['id']).startswith('temp_'):
+                    # Create new client with auto-generated ID
+                    client = Client(
+                        nom=client_data['nom'],
+                        prenoms=client_data['prenoms'],
+                        email=client_data.get('email'),
+                        telephone=client_data['telephone'],
+                        created_at=client_data.get('created_at', sync_timestamp),
+                        updated_at=sync_timestamp
+                    )
+                    db.session.add(client)
+                else:
+                    # Check if client exists
+                    client = Client.query.get(client_data['id'])
+                    if client:
+                        # Update existing client
+                        client.nom = client_data.get('nom', client.nom)
+                        client.prenoms = client_data.get('prenoms', client.prenoms)
+                        client.email = client_data.get('email', client.email)
+                        client.telephone = client_data.get('telephone', client.telephone)
+                        client.updated_at = sync_timestamp
+                    else:
+                        # Create new client with the provided ID
+                        client = Client(
+                            id=client_data['id'],
+                            nom=client_data['nom'],
+                            prenoms=client_data['prenoms'],
+                            email=client_data.get('email'),
+                            telephone=client_data['telephone'],
+                            created_at=client_data.get('created_at', sync_timestamp),
+                            updated_at=sync_timestamp
+                        )
+                        db.session.add(client)
+        
+        # Process measurement updates
+        if 'measurements' in data:
+            for measurement_data in data['measurements']:
+                # For temporary measurements, create new records
+                if str(measurement_data['id']).startswith('temp_'):
+                    measurement = Measurement(
+                        client_id=measurement_data['client_id'],
+                        do=measurement_data.get('do'),
+                        poitrine=measurement_data.get('poitrine'),
+                        taille=measurement_data.get('taille'),
+                        longueur=measurement_data.get('longueur'),
+                        manche=measurement_data.get('manche'),
+                        tour_manche=measurement_data.get('tour_manche'),
+                        ceinture=measurement_data.get('ceinture'),
+                        bassin=measurement_data.get('bassin'),
+                        cuisse=measurement_data.get('cuisse'),
+                        longueur_pantalon=measurement_data.get('longueur_pantalon'),
+                        bas=measurement_data.get('bas'),
+                        description=measurement_data.get('description'),
+                        image_path=measurement_data.get('image_path'),
+                        created_at=measurement_data.get('created_at', sync_timestamp),
+                        updated_at=sync_timestamp
+                    )
+                    db.session.add(measurement)
+                else:
+                    # Check if measurement exists
+                    measurement = Measurement.query.get(measurement_data['id'])
+                    if measurement:
+                        # Update existing measurement
+                        measurement.client_id = measurement_data.get('client_id', measurement.client_id)
+                        measurement.do = measurement_data.get('do', measurement.do)
+                        measurement.poitrine = measurement_data.get('poitrine', measurement.poitrine)
+                        measurement.taille = measurement_data.get('taille', measurement.taille)
+                        measurement.longueur = measurement_data.get('longueur', measurement.longueur)
+                        measurement.manche = measurement_data.get('manche', measurement.manche)
+                        measurement.tour_manche = measurement_data.get('tour_manche', measurement.tour_manche)
+                        measurement.ceinture = measurement_data.get('ceinture', measurement.ceinture)
+                        measurement.bassin = measurement_data.get('bassin', measurement.bassin)
+                        measurement.cuisse = measurement_data.get('cuisse', measurement.cuisse)
+                        measurement.longueur_pantalon = measurement_data.get('longueur_pantalon', measurement.longueur_pantalon)
+                        measurement.bas = measurement_data.get('bas', measurement.bas)
+                        measurement.description = measurement_data.get('description', measurement.description)
+                        measurement.image_path = measurement_data.get('image_path', measurement.image_path)
+                        measurement.updated_at = sync_timestamp
+                    else:
+                        # Create new measurement with the provided ID
+                        measurement = Measurement(
+                            id=measurement_data['id'],
+                            client_id=measurement_data['client_id'],
+                            do=measurement_data.get('do'),
+                            poitrine=measurement_data.get('poitrine'),
+                            taille=measurement_data.get('taille'),
+                            longueur=measurement_data.get('longueur'),
+                            manche=measurement_data.get('manche'),
+                            tour_manche=measurement_data.get('tour_manche'),
+                            ceinture=measurement_data.get('ceinture'),
+                            bassin=measurement_data.get('bassin'),
+                            cuisse=measurement_data.get('cuisse'),
+                            longueur_pantalon=measurement_data.get('longueur_pantalon'),
+                            bas=measurement_data.get('bas'),
+                            description=measurement_data.get('description'),
+                            image_path=measurement_data.get('image_path'),
+                            created_at=measurement_data.get('created_at', sync_timestamp),
+                            updated_at=sync_timestamp
+                        )
+                        db.session.add(measurement)
+        
+        # Process order updates
+        if 'orders' in data:
+            for order_data in data['orders']:
+                # For temporary orders, create new records
+                if str(order_data['id']).startswith('temp_'):
+                    order = Order(
+                        client_id=order_data['client_id'],
+                        montant_total=order_data['montant_total'],
+                        montant_avance=order_data.get('montant_avance', 0),
+                        montant_restant=order_data['montant_restant'],
+                        status=order_data.get('status', 'en_cours'),
+                        created_at=order_data.get('created_at', sync_timestamp),
+                        updated_at=sync_timestamp,
+                        completed_at=order_data.get('completed_at')
+                    )
+                    db.session.add(order)
+                else:
+                    # Check if order exists
+                    order = Order.query.get(order_data['id'])
+                    if order:
+                        # Update existing order
+                        order.client_id = order_data.get('client_id', order.client_id)
+                        order.montant_total = order_data.get('montant_total', order.montant_total)
+                        order.montant_avance = order_data.get('montant_avance', order.montant_avance)
+                        order.montant_restant = order_data.get('montant_restant', order.montant_restant)
+                        order.status = order_data.get('status', order.status)
+                        order.completed_at = order_data.get('completed_at', order.completed_at)
+                        order.updated_at = sync_timestamp
+                    else:
+                        # Create new order with the provided ID
+                        order = Order(
+                            id=order_data['id'],
+                            client_id=order_data['client_id'],
+                            montant_total=order_data['montant_total'],
+                            montant_avance=order_data.get('montant_avance', 0),
+                            montant_restant=order_data['montant_restant'],
+                            status=order_data.get('status', 'en_cours'),
+                            created_at=order_data.get('created_at', sync_timestamp),
+                            updated_at=sync_timestamp,
+                            completed_at=order_data.get('completed_at')
+                        )
+                        db.session.add(order)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Data synchronized successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/sync/last-update', methods=['GET'])
+def get_last_update():
+    """Get the timestamp of the last update on the server"""
+    try:
+        # Get the latest updated_at timestamp from any table
+        client_updated = db.session.query(db.func.max(Client.updated_at)).scalar()
+        measurement_updated = db.session.query(db.func.max(Measurement.updated_at)).scalar()
+        order_updated = db.session.query(db.func.max(Order.updated_at)).scalar()
+        
+        timestamps = [client_updated, measurement_updated, order_updated]
+        valid_timestamps = [t for t in timestamps if t is not None]
+        
+        if valid_timestamps:
+            latest = max(valid_timestamps)
+            return jsonify({'last_update': latest.isoformat()})
+        else:
+            return jsonify({'last_update': datetime.utcnow().isoformat()})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Route de Récupération Maître (MASTER RECOVERY)
 # ⚠️ À utiliser UNIQUEMENT en cas d'urgence
@@ -480,15 +645,17 @@ def register():
     data = request.json
     username = data.get('username')
     password = data.get('password')
+    pin = data.get('pin')  # New PIN field
+    email = data.get('email')  # New email field
     
-    if not username or not password:
-        return jsonify({'error': 'Username et password requis'}), 400
+    if not username or not password or not pin:
+        return jsonify({'error': 'Username, password et PIN requis'}), 400
     
     # Bypass authentication - always allow registration
     return jsonify({
         'success': True,
         'message': 'Utilisateur créé avec succès',
-        'user': {'id': 1, 'username': username, 'created_at': None}
+        'user': {'id': 1, 'username': username, 'email': email, 'created_at': None}
     }), 201
 
 @app.route('/api/auth/login', methods=['POST'])
@@ -510,16 +677,92 @@ def login():
         'user': {'id': 1, 'username': username, 'created_at': None}
     })
 
+@app.route('/api/auth/pin-login', methods=['POST'])
+def pin_login():
+    """
+    Connexion avec PIN
+    """
+    data = request.json
+    pin = data.get('pin')
+    
+    if not pin:
+        return jsonify({'error': 'PIN requis'}), 400
+    
+    # Check if user exists and PIN is correct
+    user = User.query.first()
+    if user and user.check_pin(pin):
+        return jsonify({
+            'success': True,
+            'message': 'Connexion avec PIN réussie',
+            'user': user.to_dict()
+        })
+    else:
+        return jsonify({'error': 'PIN incorrect'}), 401
+
 @app.route('/api/auth/check', methods=['GET'])
 def check_auth():
     """
     Vérifier si un utilisateur est déjà enregistré
     """
-    # Always return that a user exists to bypass authentication
-    return jsonify({
-        'has_user': True,
-        'user': {'id': 1, 'username': 'default_user', 'created_at': None}
-    })
+    user = User.query.first()
+    if user:
+        return jsonify({
+            'has_user': True,
+            'user': user.to_dict()
+        })
+    else:
+        return jsonify({
+            'has_user': False
+        })
+
+@app.route('/api/auth/forgot-pin', methods=['POST'])
+def forgot_pin():
+    """
+    Réinitialiser le PIN via email
+    """
+    data = request.json
+    email = data.get('email')
+    
+    if not email:
+        return jsonify({'error': 'Email requis'}), 400
+    
+    # Find user by email
+    user = User.query.filter_by(email=email).first()
+    if user:
+        # Generate a reset token (in a real app, you would send an email)
+        reset_token = "reset_token_12345"  # Simplified for this app
+        return jsonify({
+            'success': True,
+            'message': 'Instructions de réinitialisation envoyées à votre email',
+            'reset_token': reset_token  # In a real app, this would be sent via email
+        })
+    else:
+        return jsonify({'error': 'Aucun utilisateur trouvé avec cet email'}), 404
+
+@app.route('/api/auth/reset-pin', methods=['POST'])
+def reset_pin():
+    """
+    Réinitialiser le PIN
+    """
+    data = request.json
+    new_pin = data.get('pin')
+    reset_token = data.get('reset_token')
+    
+    if not new_pin or not reset_token:
+        return jsonify({'error': 'PIN et token de réinitialisation requis'}), 400
+    
+    # In a real app, you would verify the reset token
+    # For this app, we'll just update the PIN for the first user
+    user = User.query.first()
+    if user:
+        user.set_pin(new_pin)
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'message': 'PIN réinitialisé avec succès'
+        })
+    else:
+        return jsonify({'error': 'Utilisateur non trouvé'}), 404
 
 @app.route('/api/auth/reset', methods=['POST'])
 def reset_password():
