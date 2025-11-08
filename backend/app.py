@@ -640,7 +640,7 @@ def verify_master_credentials():
 @app.route('/api/auth/register', methods=['POST'])
 def register():
     """
-    Enregistrer un nouvel utilisateur (premier setup) - Bypass authentication
+    Enregistrer un nouvel utilisateur (premier setup)
     """
     data = request.json
     username = data.get('username')
@@ -651,17 +651,28 @@ def register():
     if not username or not password or not pin:
         return jsonify({'error': 'Username, password et PIN requis'}), 400
     
-    # Bypass authentication - always allow registration
+    # Check if user already exists
+    existing_user = User.query.first()
+    if existing_user:
+        return jsonify({'error': 'Un utilisateur existe déjà'}), 400
+    
+    # Create new user
+    user = User(username=username, email=email)
+    user.set_password(password)
+    user.set_pin(pin)  # Set the PIN hash
+    db.session.add(user)
+    db.session.commit()
+    
     return jsonify({
         'success': True,
         'message': 'Utilisateur créé avec succès',
-        'user': {'id': 1, 'username': username, 'email': email, 'created_at': None}
+        'user': user.to_dict()
     }), 201
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     """
-    Connexion utilisateur - Bypass authentication
+    Connexion utilisateur
     """
     data = request.json
     username = data.get('username')
@@ -670,12 +681,16 @@ def login():
     if not username or not password:
         return jsonify({'error': 'Username et password requis'}), 400
     
-    # Bypass authentication - always allow login
-    return jsonify({
-        'success': True,
-        'message': 'Connexion réussie',
-        'user': {'id': 1, 'username': username, 'created_at': None}
-    })
+    # Check if user exists and password is correct
+    user = User.query.first()
+    if user and user.check_password(password):
+        return jsonify({
+            'success': True,
+            'message': 'Connexion réussie',
+            'user': user.to_dict()
+        })
+    else:
+        return jsonify({'error': 'Identifiants invalides'}), 401
 
 @app.route('/api/auth/pin-login', methods=['POST'])
 def pin_login():

@@ -65,6 +65,13 @@
             {{ loading ? 'Création...' : 'Créer le compte' }}
           </button>
         </form>
+        
+        <!-- Add login option -->
+        <div class="login-option">
+          <p>Déjà un compte ? 
+            <button @click="goToLogin" class="link-button">Se connecter</button>
+          </p>
+        </div>
       </div>
     </div>
   </div>
@@ -183,7 +190,8 @@ export default {
         if (response.data.success) {
           loading.value = false;
           showNotification('Succès', 'Compte créé avec succès', 'success');
-          router.push('/pin-login');
+          // Automatically login the user after successful registration
+          handleAutoLogin(pin.value);
         } else {
           loading.value = false;
           showNotification('Erreur', response.data.error || 'Erreur lors de la création du compte', 'error');
@@ -192,6 +200,26 @@ export default {
         loading.value = false;
         showNotification('Erreur', error.response?.data?.error || 'Erreur lors de la création du compte', 'error');
       }
+    };
+
+    const handleAutoLogin = async (userPin) => {
+      try {
+        const response = await axios.post(`${API_URL}/auth/pin-login`, { pin: userPin });
+        if (response.data.success) {
+          showNotification('Succès', 'Connexion réussie', 'success');
+          router.push('/dashboard');
+        } else {
+          showNotification('Erreur', response.data.error || 'Erreur de connexion', 'error');
+          router.push('/pin-login');
+        }
+      } catch (error) {
+        showNotification('Erreur', error.response?.data?.error || 'Erreur de connexion', 'error');
+        router.push('/pin-login');
+      }
+    };
+
+    const goToLogin = () => {
+      router.push('/pin-login');
     };
 
     return {
@@ -207,7 +235,8 @@ export default {
       handlePinKeydown,
       handleConfirmPinInput,
       handleConfirmPinKeydown,
-      handleRegister
+      handleRegister,
+      goToLogin
     };
   }
 };
@@ -362,6 +391,33 @@ export default {
 .btn-register:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.login-option {
+  text-align: center;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.login-option p {
+  color: #7f8c8d;
+  margin: 0;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #e91e63;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.link-button:hover {
+  background-color: rgba(233, 30, 99, 0.1);
 }
 
 @media (max-width: 768px) {
