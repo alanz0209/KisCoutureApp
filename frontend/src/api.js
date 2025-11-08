@@ -385,73 +385,128 @@ export const syncData = async () => {
   if (!isOnline()) return false;
   
   try {
-    // Synchroniser les données locales vers le serveur
+    // Get the last sync timestamp
+    const lastSync = await localforage.getItem('last_sync') || null;
+    
+    // Get current local data
     const clients = await localforage.getItem('clients') || [];
     const orders = await localforage.getItem('orders') || [];
     const measurements = await localforage.getItem('measurements') || [];
     
-    // Synchroniser les clients temporaires
-    const tempClients = clients.filter(c => String(c.id).startsWith('temp_'));
-    for (const client of tempClients) {
-      try {
-        const { id, ...clientData } = client;
-        await api.post('/clients', clientData);
-      } catch (error) {
-        console.error('Erreur sync client:', error);
-      }
+    // Separate new/modified data from existing data
+    const newClients = clients.filter(c => String(c.id).startsWith('temp_'));
+    const modifiedClients = clients.filter(c => !String(c.id).startsWith('temp_') && 
+      (!lastSync || new Date(c.updated_at) > new Date(lastSync)));
+    
+    const newOrders = orders.filter(o => String(o.id).startsWith('temp_'));
+    const modifiedOrders = orders.filter(o => !String(o.id).startsWith('temp_') && 
+      (!lastSync || new Date(o.updated_at) > new Date(lastSync)));
+    
+    const newMeasurements = measurements.filter(m => String(m.id).startsWith('temp_'));
+    const modifiedMeasurements = measurements.filter(m => !String(m.id).startsWith('temp_') && 
+      (!lastSync || new Date(m.updated_at) > new Date(lastSync)));
+    
+    // Prepare sync data
+    const syncData = {
+      clients: [...newClients, ...modifiedClients],
+      orders: [...newOrders, ...modifiedOrders],
+      measurements: [...newMeasurements, ...modifiedMeasurements]
+    };
+    
+    // Only sync if there's data to sync
+    if (syncData.clients.length > 0 || syncData.orders.length > 0 || syncData.measurements.length > 0) {
+      // Send data to server
+      await api.post('/sync', syncData);
     }
     
-    // Synchroniser les commandes temporaires
-    const tempOrders = orders.filter(o => String(o.id).startsWith('temp_'));
-    for (const order of tempOrders) {
-      try {
-        const { id, ...orderData } = order;
-        await api.post('/orders', orderData);
-      } catch (error) {
-        console.error('Erreur sync order:', error);
-      }
-    }
-    
-    // Synchroniser les mesures temporaires avec images en base64
-    const tempMeasurements = measurements.filter(m => String(m.id).startsWith('temp_'));
-    for (const measurement of tempMeasurements) {
-      try {
-        const formData = new FormData();
-        const { id, image_data, created_at, ...measurementData } = measurement;
-        
-        Object.keys(measurementData).forEach(key => {
-          if (measurementData[key] !== null && key !== 'image_path') {
-            formData.append(key, measurementData[key]);
-          }
-        });
-        
-        // Convertir base64 en fichier si image présente
-        if (image_data) {
-          const blob = await fetch(image_data).then(r => r.blob());
-          const file = new File([blob], measurement.image_path || 'image.jpg', { type: blob.type });
-          formData.append('image', file);
-        }
-        
-        await api.post('/measurements', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-      } catch (error) {
-        console.error('Erreur sync measurement:', error);
-      }
-    }
-    
-    // Recharger les données du serveur
-    const [newClients, newOrders] = await Promise.all([
+    // Get all server data
+    const [serverClients, serverOrders, serverMeasurements] = await Promise.all([
       api.get('/clients'),
-      api.get('/orders')
+      api.get('/orders'),
+      api.get('/measurements') // New endpoint to get all measurements
     ]);
     
-    await localforage.setItem('clients', newClients.data);
-    await localforage.setItem('orders', newOrders.data);
+    // Merge server data with local data
+    const mergedClients = mergeData(clients, serverClients.data, 'id');
+    const mergedOrders = mergeData(orders, serverOrders.data, 'id');
+    const mergedMeasurements = mergeData(measurements, serverMeasurements.data, 'id');
+    
+    // Save merged data
+    await localforage.setItem('clients', mergedClients);
+    await localforage.setItem('orders', mergedOrders);
+    await localforage.setItem('measurements', mergedMeasurements);
+    
+    // Update last sync timestamp
+    await localforage.setItem('last_sync', new Date().toISOString());
     
     return true;
   } catch (error) {
     console.error('Erreur de synchronisation:', error);
     return false;
   }
+};
+
+// Helper function to merge local and server data
+const mergeData = (localData, serverData, idField) => {
+  // Create a map of server data for quick lookup
+  const serverMap = new Map();
+  serverData.forEach(item => {
+    serverMap.set(item[idField], item);
+  });
+  
+  // Start with server data
+  const merged = [...serverData];
+  
+  // Add local temporary items that aren't on server yet
+  localData.forEach(localItem => {
+    if (String(localItem[idField]).startsWith('temp_')) {
+      // For temp items, we'll keep them in local storage until they're properly synced
+      // Check if a similar item already exists on server
+      const exists = serverData.some(serverItem => 
+        serverItem.nom === localItem.nom && 
+        serverItem.prenoms === localItem.prenoms
+      );
+      
+      if (!exists) {
+        merged.push(localItem);
+      }
+    } else {
+      // For non-temp items, server data takes precedence
+      // But we should check if local data is more recent
+      const serverItem = serverMap.get(localItem[idField]);
+      if (serverItem) {
+        // If server item exists, check timestamps
+        const localUpdated = new Date(localItem.updated_at || localItem.created_at || 0);
+        const serverUpdated = new Date(serverItem.updated_at || serverItem.created_at || 0);
+        
+        if (localUpdated > serverUpdated) {
+          // Local data is more recent, update the merged item
+          const index = merged.findIndex(item => item[idField] === localItem[idField]);
+          if (index !== -1) {
+            merged[index] = localItem;
+          }
+        }
+      } else {
+        // Item doesn't exist on server, add it
+        merged.push(localItem);
+      }
+    }
+  });
+  
+  return merged;
+};
+
+// Auto-sync function that can be called periodically
+export const autoSync = async () => {
+  if (isOnline()) {
+    const lastAttempt = await localforage.getItem('last_sync_attempt');
+    const now = new Date().getTime();
+    
+    // Only attempt sync if it's been more than 5 minutes since last attempt
+    if (!lastAttempt || now - lastAttempt > 5 * 60 * 1000) {
+      await localforage.setItem('last_sync_attempt', now);
+      return await syncData();
+    }
+  }
+  return false;
 };

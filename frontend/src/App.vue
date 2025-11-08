@@ -7,10 +7,12 @@
 </template>
 
 <script>
-import { onMounted } from 'vue';
+import { onMounted, onBeforeMount } from 'vue';
+import { useRouter } from 'vue-router';
 import Navbar from './components/Navbar.vue';
 import NotificationContainer from './components/NotificationContainer.vue';
 import { requestNotificationPermission } from './utils/notifications';
+import { autoSync } from './api';
 
 export default {
   name: 'App',
@@ -19,8 +21,22 @@ export default {
     NotificationContainer
   },
   setup() {
+    const router = useRouter();
+    
+    onBeforeMount(() => {
+      // Redirect to PIN login on app start
+      if (window.location.pathname === '/') {
+        router.push('/pin-login');
+      }
+    });
+    
     onMounted(async () => {
       requestNotificationPermission();
+      
+      // Automatically sync data when app starts if online
+      setTimeout(() => {
+        autoSync();
+      }, 2000); // Wait 2 seconds for everything to load
     });
   }
 };

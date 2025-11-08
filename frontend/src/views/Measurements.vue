@@ -88,6 +88,10 @@
               <input type="number" step="0.1" v-model="formData.bas" />
             </div>
             <div class="form-group full-width">
+              <label>Description (Informations supplémentaires)</label>
+              <textarea v-model="formData.description" rows="3" placeholder="Ajoutez des informations supplémentaires sur les mesures..."></textarea>
+            </div>
+            <div class="form-group full-width">
               <label>Image de référence (optionnelle)</label>
               <input type="file" accept="image/*" @change="handleImageChange" />
               <small v-if="!isOnline" style="color: #f39c12;">📱 Mode hors ligne - L'image sera sauvegardée localement</small>
@@ -117,6 +121,7 @@
               <p v-if="measurement.cuisse"><strong>Cuisse:</strong> {{ measurement.cuisse }} cm</p>
               <p v-if="measurement.longueur_pantalon"><strong>Long. Pantalon:</strong> {{ measurement.longueur_pantalon }} cm</p>
               <p v-if="measurement.bas"><strong>Bas:</strong> {{ measurement.bas }} cm</p>
+              <p v-if="measurement.description"><strong>Description:</strong> {{ measurement.description }}</p>
             </div>
             <div v-if="measurement.image_path || measurement.image_data" class="image-preview">
               <img 
@@ -162,6 +167,7 @@ export default {
       cuisse: '',
       longueur_pantalon: '',
       bas: '',
+      description: '',  // New field
       image: null
     });
 
@@ -235,6 +241,7 @@ export default {
         cuisse: '',
         longueur_pantalon: '',
         bas: '',
+        description: '',  // New field
         image: null
       };
     };
@@ -455,6 +462,31 @@ export default {
   box-sizing: border-box;
 }
 
+.form-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  box-sizing: border-box;
+  font-family: inherit;
+  resize: vertical;
+}
+
+@media (max-width: 768px) {
+  .form-group textarea {
+    padding: 12px 14px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-group textarea {
+    padding: 10px 12px;
+    font-size: 16px;
+  }
+}
+
 @media (max-width: 768px) {
   .form-group input {
     padding: 12px 14px;
@@ -609,7 +641,5 @@ export default {
     font-size: 11px;
   }
 }
- 
- < / s t y l e > 
- 
- 
+}
+</style>

@@ -1,19 +1,27 @@
 <template>
   <div class="container">
     <div class="page-header">
-      <h1>Gestion des Clients</h1>
-      <button class="btn btn-primary" @click="showForm = !showForm; selectedClient = null">
-        {{ showForm ? 'Annuler' : '➕ Nouveau Client' }}
+      <h1>👥 Gestion des Clients</h1>
+      <button @click="showForm = true" class="btn btn-primary btn-large">
+        ➕ Ajouter un Client
       </button>
     </div>
 
     <div class="clients-layout">
-      <!-- Liste des clients à gauche -->
+      <!-- Liste des clients avec barre de recherche -->
       <div class="clients-list-panel">
-        <h2>Liste des Clients ({{ clients.length }})</h2>
+        <h2>📋 Liste des Clients</h2>
+        <div class="search-container">
+          <input 
+            type="text" 
+            v-model="searchQuery" 
+            placeholder="🔍 Rechercher un client..." 
+            class="search-input"
+          />
+        </div>
         <div class="clients-list">
           <div
-            v-for="client in clients"
+            v-for="client in filteredClients"
             :key="client.id"
             :class="['client-item', selectedClient?.id === client.id ? 'active' : '']"
             @click="selectClient(client)"
@@ -25,7 +33,7 @@
               <span v-if="String(client.id).startsWith('temp_')" class="badge-offline">📱 Local</span>
             </div>
           </div>
-          <div v-if="clients.length === 0" class="no-data">
+          <div v-if="filteredClients.length === 0" class="no-data">
             Aucun client trouvé
           </div>
         </div>
@@ -186,6 +194,9 @@
               <div v-if="clientMeasurements.bas" class="measure-item">
                 <strong>Bas:</strong> {{ clientMeasurements.bas }} cm
               </div>
+              <div v-if="clientMeasurements.description" class="measure-item">
+                <strong>Description:</strong> {{ clientMeasurements.description }}
+              </div>
               <div v-if="!hasMeasurements" class="no-data">
                 Aucune mesure enregistrée
               </div>
@@ -250,9 +261,10 @@ export default {
     const clients = ref([]);
     const selectedClient = ref(null);
     const clientMeasurements = ref(null);
-    const clientOrders = ref([]);
     const showForm = ref(false);
     const editMode = ref(false);
+    const searchQuery = ref(''); // New search query ref
+
     const formData = ref({
       nom: '',
       prenoms: '',
@@ -269,9 +281,24 @@ export default {
         bassin: '',
         cuisse: '',
         longueur_pantalon: '',
-        bas: '',
-        image: null
+        bas: ''
+      },
+      image: null
+    });
+
+    // Computed property for filtered clients based on search query
+    const filteredClients = computed(() => {
+      if (!searchQuery.value) {
+        return clients.value;
       }
+      
+      const query = searchQuery.value.toLowerCase().trim();
+      return clients.value.filter(client => 
+        client.nom.toLowerCase().includes(query) ||
+        client.prenoms.toLowerCase().includes(query) ||
+        client.telephone.includes(query) ||
+        (client.email && client.email.toLowerCase().includes(query))
+      );
     });
 
     const hasMeasurements = computed(() => {
@@ -618,6 +645,53 @@ export default {
   
   .clients-list-panel {
     max-height: 250px;
+  }
+}
+
+.clients-list-panel {
+  flex: 1;
+  min-width: 300px;
+}
+
+.search-container {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 16px 12px 40px;
+  border: 2px solid #e1e8ed;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23999' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 12px center;
+  box-sizing: border-box;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+@media (max-width: 768px) {
+  .search-input {
+    padding: 14px 16px 14px 40px;
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-container {
+    margin-bottom: 15px;
+  }
+  
+  .search-input {
+    padding: 12px 14px 12px 36px;
+    font-size: 16px;
   }
 }
 
