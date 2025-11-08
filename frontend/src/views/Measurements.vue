@@ -87,6 +87,14 @@
               <label>Bas (cm)</label>
               <input type="number" step="0.1" v-model="formData.bas" />
             </div>
+            <div class="form-group">
+              <label>Longueur (genou) (cm)</label>
+              <input type="number" step="0.1" v-model="formData.longueur_genou" />
+            </div>
+            <div class="form-group">
+              <label>Tour (mollet) (cm)</label>
+              <input type="number" step="0.1" v-model="formData.tour_mollet" />
+            </div>
             <div class="form-group full-width">
               <label>Image de référence (optionnelle)</label>
               <input type="file" accept="image/*" @change="handleImageChange" />
@@ -117,6 +125,8 @@
               <p v-if="measurement.cuisse"><strong>Cuisse:</strong> {{ measurement.cuisse }} cm</p>
               <p v-if="measurement.longueur_pantalon"><strong>Long. Pantalon:</strong> {{ measurement.longueur_pantalon }} cm</p>
               <p v-if="measurement.bas"><strong>Bas:</strong> {{ measurement.bas }} cm</p>
+              <p v-if="measurement.longueur_genou"><strong>Long. (genou):</strong> {{ measurement.longueur_genou }} cm</p>
+              <p v-if="measurement.tour_mollet"><strong>Tour (mollet):</strong> {{ measurement.tour_mollet }} cm</p>
             </div>
             <div v-if="measurement.image_path || measurement.image_data" class="image-preview">
               <img 
@@ -162,6 +172,8 @@ export default {
       cuisse: '',
       longueur_pantalon: '',
       bas: '',
+      longueur_genou: '',  // New field
+      tour_mollet: '',     // New field
       image: null
     });
 
@@ -235,6 +247,8 @@ export default {
         cuisse: '',
         longueur_pantalon: '',
         bas: '',
+        longueur_genou: '',  // New field
+        tour_mollet: '',     // New field
         image: null
       };
     };

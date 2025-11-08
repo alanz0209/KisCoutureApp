@@ -86,6 +86,8 @@ class Measurement(db.Model):
     cuisse = db.Column(db.String(50))
     longueur_pantalon = db.Column(db.String(50))
     bas = db.Column(db.String(50))
+    longueur_genou = db.Column(db.String(50))  # New field: Longueur (genou)
+    tour_mollet = db.Column(db.String(50))     # New field: Tour (mollet)
     
     image_path = db.Column(db.String(255))  # Chemin de l'image
     
@@ -107,6 +109,8 @@ class Measurement(db.Model):
             'cuisse': self.cuisse,
             'longueur_pantalon': self.longueur_pantalon,
             'bas': self.bas,
+            'longueur_genou': self.longueur_genou,  # New field
+            'tour_mollet': self.tour_mollet,       # New field
             'image_path': self.image_path,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
@@ -206,7 +210,9 @@ def create_measurement():
         bassin=data.get('bassin') if data.get('bassin') else None,
         cuisse=data.get('cuisse') if data.get('cuisse') else None,
         longueur_pantalon=data.get('longueur_pantalon') if data.get('longueur_pantalon') else None,
-        bas=data.get('bas') if data.get('bas') else None
+        bas=data.get('bas') if data.get('bas') else None,
+        longueur_genou=data.get('longueur_genou') if data.get('longueur_genou') else None,  # New field
+        tour_mollet=data.get('tour_mollet') if data.get('tour_mollet') else None           # New field
     )
     
     # Handle image upload
@@ -238,6 +244,8 @@ def update_measurement(id):
     measurement.cuisse = float(data.get('cuisse', 0)) if data.get('cuisse') else measurement.cuisse
     measurement.longueur_pantalon = float(data.get('longueur_pantalon', 0)) if data.get('longueur_pantalon') else measurement.longueur_pantalon
     measurement.bas = float(data.get('bas', 0)) if data.get('bas') else measurement.bas
+    measurement.longueur_genou = float(data.get('longueur_genou', 0)) if data.get('longueur_genou') else measurement.longueur_genou  # New field
+    measurement.tour_mollet = float(data.get('tour_mollet', 0)) if data.get('tour_mollet') else measurement.tour_mollet           # New field
     
     # Handle image upload
     if 'image' in request.files:
@@ -276,6 +284,8 @@ def update_client_measurement(client_id):
         measurement.cuisse = float(data.get('cuisse', 0)) if data.get('cuisse') else None
         measurement.longueur_pantalon = float(data.get('longueur_pantalon', 0)) if data.get('longueur_pantalon') else None
         measurement.bas = float(data.get('bas', 0)) if data.get('bas') else None
+        measurement.longueur_genou = float(data.get('longueur_genou', 0)) if data.get('longueur_genou') else None  # New field
+        measurement.tour_mollet = float(data.get('tour_mollet', 0)) if data.get('tour_mollet') else None         # New field
     else:
         # Création
         measurement = Measurement(
@@ -290,7 +300,9 @@ def update_client_measurement(client_id):
             bassin=float(data.get('bassin', 0)) if data.get('bassin') else None,
             cuisse=float(data.get('cuisse', 0)) if data.get('cuisse') else None,
             longueur_pantalon=float(data.get('longueur_pantalon', 0)) if data.get('longueur_pantalon') else None,
-            bas=float(data.get('bas', 0)) if data.get('bas') else None
+            bas=float(data.get('bas', 0)) if data.get('bas') else None,
+            longueur_genou=float(data.get('longueur_genou', 0)) if data.get('longueur_genou') else None,  # New field
+            tour_mollet=float(data.get('tour_mollet', 0)) if data.get('tour_mollet') else None           # New field
         )
         db.session.add(measurement)
     
