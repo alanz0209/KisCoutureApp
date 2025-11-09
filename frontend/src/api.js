@@ -36,13 +36,12 @@ export const clientAPI = {
     if (isOnline()) {
       try {
         const response = await api.post('/clients', data);
-        const clients = await localforage.getItem('clients') || [];
-        // Add sync_source to indicate this was created online
-        const clientWithSource = { ...response.data, sync_source: 'online' };
-        clients.push(clientWithSource);
-        await localforage.setItem('clients', clients);
-        return clientWithSource;
+        // For online-created clients, we don't need to store them in local storage
+        // They will be fetched from the server when needed
+        // But we still add sync_source for consistency
+        return { ...response.data, sync_source: 'online' };
       } catch (error) {
+        // If online creation fails, fallback to offline creation
         const tempId = `temp_${Date.now()}`;
         const newClient = { ...data, id: tempId, created_at: new Date().toISOString(), sync_source: 'offline' };
         const clients = await localforage.getItem('clients') || [];
@@ -51,6 +50,7 @@ export const clientAPI = {
         return newClient;
       }
     }
+    // Offline mode - create temporary client
     const tempId = `temp_${Date.now()}`;
     const newClient = { ...data, id: tempId, created_at: new Date().toISOString(), sync_source: 'offline' };
     const clients = await localforage.getItem('clients') || [];
@@ -127,13 +127,12 @@ export const orderAPI = {
     if (isOnline()) {
       try {
         const response = await api.post('/orders', data);
-        const orders = await localforage.getItem('orders') || [];
-        // Add sync_source to indicate this was created online
-        const orderWithSource = { ...response.data, sync_source: 'online' };
-        orders.push(orderWithSource);
-        await localforage.setItem('orders', orders);
-        return orderWithSource;
+        // For online-created orders, we don't need to store them in local storage
+        // They will be fetched from the server when needed
+        // But we still add sync_source for consistency
+        return { ...response.data, sync_source: 'online' };
       } catch (error) {
+        // If online creation fails, fallback to offline creation
         const tempId = `temp_${Date.now()}`;
         // Determine status based on payment completion for offline orders too
         const total = parseFloat(data.montant_total) || 0;
@@ -147,6 +146,7 @@ export const orderAPI = {
         return newOrder;
       }
     }
+    // Offline mode - create temporary order
     const tempId = `temp_${Date.now()}`;
     // Determine status based on payment completion for offline orders too
     const total = parseFloat(data.montant_total) || 0;
@@ -240,17 +240,17 @@ export const measurementAPI = {
         const response = await api.post('/measurements', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
-        const measurements = await localforage.getItem('measurements') || [];
-        measurements.push(response.data);
-        await localforage.setItem('measurements', measurements);
-        return response.data;
+        // For online-created measurements, we don't need to store them in local storage
+        // They will be fetched from the server when needed
+        // But we still add sync_source for consistency
+        return { ...response.data, sync_source: 'online' };
       } catch (error) {
-        // En cas d'erreur, sauvegarder localement
+        // If online creation fails, fallback to offline creation
         return await this.saveOffline(formData, hasImage);
       }
     }
     
-    // Mode hors ligne - tout sauvegarder localement
+    // Offline mode - save to local storage
     return await this.saveOffline(formData, hasImage);
   },
 

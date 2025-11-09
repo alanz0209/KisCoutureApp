@@ -478,19 +478,12 @@ export default {
           await selectClient(client);
         }
         
-        if (!isOnline()) {
-          showNotification(
-            editMode.value ? 'Modifications enregistrées' : 'Client créé',
-            'Les données ont été sauvegardées localement.',
-            'success'
-          );
-        } else {
-          showNotification(
-            editMode.value ? 'Modifications enregistrées' : 'Client créé',
-            'Les données ont été sauvegardées avec succès.',
-            'success'
-          );
-        }
+        // Show only one notification
+        showNotification(
+          editMode.value ? 'Modifications enregistrées' : 'Client créé',
+          !isOnline() ? 'Les données ont été sauvegardées localement.' : 'Les données ont été sauvegardées avec succès.',
+          'success'
+        );
       } catch (error) {
         console.error('Erreur:', error);
         showNotification(
