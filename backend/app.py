@@ -48,6 +48,16 @@ try:
         inspector = inspect(db.engine)
         tables = inspector.get_table_names()
         print(f"Database tables: {tables}")
+        
+        # Ensure all required tables exist
+        required_tables = ['client', 'measurement', 'order']
+        missing_tables = [table for table in required_tables if table not in tables]
+        if missing_tables:
+            print(f"Warning: Missing tables: {missing_tables}")
+            # Try to create them again
+            db.create_all()
+            tables = inspector.get_table_names()
+            print(f"Database tables after retry: {tables}")
 except Exception as e:
     print(f"Error creating database tables: {e}")
     import traceback
@@ -598,15 +608,21 @@ def sync_data():
                 
                 # For temporary orders, create new records
                 if str(order_data['id']).startswith('temp_'):
+                    # Recalculate status based on payment amounts
+                    montant_total = float(order_data['montant_total'])
+                    montant_avance = float(order_data.get('montant_avance', 0))
+                    montant_restant = montant_total - montant_avance
+                    status = 'termine' if montant_restant <= 0 else order_data.get('status', 'en_cours')
+                    
                     order = Order(
                         client_id=order_data['client_id'],
-                        montant_total=order_data['montant_total'],
-                        montant_avance=order_data.get('montant_avance', 0),
-                        montant_restant=order_data['montant_restant'],
-                        status=order_data.get('status', 'en_cours'),
+                        montant_total=montant_total,
+                        montant_avance=montant_avance,
+                        montant_restant=montant_restant,
+                        status=status,
                         created_at=order_data.get('created_at', sync_timestamp),
                         updated_at=sync_timestamp,
-                        completed_at=order_data.get('completed_at')
+                        completed_at=order_data.get('completed_at') if status == 'termine' else None
                     )
                     db.session.add(order)
                 else:
@@ -615,24 +631,41 @@ def sync_data():
                     if order:
                         # Update existing order
                         order.client_id = order_data.get('client_id', order.client_id)
-                        order.montant_total = order_data.get('montant_total', order.montant_total)
-                        order.montant_avance = order_data.get('montant_avance', order.montant_avance)
-                        order.montant_restant = order_data.get('montant_restant', order.montant_restant)
-                        order.status = order_data.get('status', order.status)
-                        order.completed_at = order_data.get('completed_at', order.completed_at)
+                        order.montant_total = float(order_data.get('montant_total', order.montant_total))
+                        order.montant_avance = float(order_data.get('montant_avance', order.montant_avance))
+                        order.montant_restant = order.montant_total - order.montant_avance
+                        
+                        # Recalculate status based on payment amounts if not explicitly provided
+                        if 'status' in order_data:
+                            order.status = order_data['status']
+                        else:
+                            order.status = 'termine' if order.montant_restant <= 0 else 'en_cours'
+                        
+                        # Set completed_at if order is complete
+                        if order.status == 'termine' and not order.completed_at:
+                            order.completed_at = sync_timestamp
+                        elif order.status != 'termine':
+                            order.completed_at = None
+                            
                         order.updated_at = sync_timestamp
                     else:
                         # Create new order with the provided ID
+                        # Recalculate status based on payment amounts
+                        montant_total = float(order_data['montant_total'])
+                        montant_avance = float(order_data.get('montant_avance', 0))
+                        montant_restant = montant_total - montant_avance
+                        status = 'termine' if montant_restant <= 0 else order_data.get('status', 'en_cours')
+                        
                         order = Order(
                             id=order_data['id'],
                             client_id=order_data['client_id'],
-                            montant_total=order_data['montant_total'],
-                            montant_avance=order_data.get('montant_avance', 0),
-                            montant_restant=order_data['montant_restant'],
-                            status=order_data.get('status', 'en_cours'),
+                            montant_total=montant_total,
+                            montant_avance=montant_avance,
+                            montant_restant=montant_restant,
+                            status=status,
                             created_at=order_data.get('created_at', sync_timestamp),
                             updated_at=sync_timestamp,
-                            completed_at=order_data.get('completed_at')
+                            completed_at=order_data.get('completed_at') if status == 'termine' else None
                         )
                         db.session.add(order)
         

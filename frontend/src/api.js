@@ -198,6 +198,11 @@ export const orderAPI = {
 // Measurements API
 export const measurementAPI = {
   async getByClient(clientId) {
+    // Don't try to fetch measurements for temporary client IDs
+    if (String(clientId).startsWith('temp_')) {
+      return [];
+    }
+    
     if (isOnline()) {
       try {
         const response = await api.get(`/measurements/client/${clientId}`);
