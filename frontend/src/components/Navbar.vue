@@ -36,6 +36,7 @@ export default {
   setup() {
     const online = ref(navigator.onLine);
     const syncing = ref(false);
+    let syncInterval = null;
 
     const updateOnlineStatus = () => {
       online.value = navigator.onLine;
@@ -70,11 +71,23 @@ export default {
     onMounted(() => {
       window.addEventListener('online', updateOnlineStatus);
       window.addEventListener('offline', updateOnlineStatus);
+      
+      // Set up periodic sync every 3 minutes when online
+      syncInterval = setInterval(() => {
+        if (isOnline()) {
+          handleSync();
+        }
+      }, 3 * 60 * 1000); // 3 minutes
     });
 
     onUnmounted(() => {
       window.removeEventListener('online', updateOnlineStatus);
       window.removeEventListener('offline', updateOnlineStatus);
+      
+      // Clean up interval when component is destroyed
+      if (syncInterval) {
+        clearInterval(syncInterval);
+      }
     });
 
     return {
