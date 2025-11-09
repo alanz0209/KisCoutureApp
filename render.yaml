@@ -14,10 +14,15 @@ services:
         generateValue: true
       - key: UPLOAD_FOLDER
         value: uploads
+      - key: RENDER
+        value: "true"
     disk:
-      name: uploads
-      mountPath: /opt/render/project/src/backend/uploads
-      sizeGB: 1
+      - name: uploads
+        mountPath: /opt/render/project/src/backend/uploads
+        sizeGB: 1
+      - name: database
+        mountPath: /opt/render/project/src/backend
+        sizeGB: 1
 
   # Frontend Static Site
   - type: web

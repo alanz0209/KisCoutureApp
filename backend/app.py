@@ -12,14 +12,24 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
+
 # Use absolute path for database on Render
 DB_PATH = os.getenv('DATABASE_URL', 'sqlite:///kis_couture.db')
-if DB_PATH.startswith('sqlite:///') and not DB_PATH.startswith('sqlite:////'):
-    # Convert relative path to absolute path
-    import os
-    DB_NAME = DB_PATH.replace('sqlite:///', '')
-    DB_PATH = f'sqlite:///{os.path.abspath(DB_NAME)}'
-    print(f"Using database path: {DB_PATH}")
+
+# Ensure database is created in a persistent location on Render
+if os.getenv('RENDER', False):
+    # On Render, use a persistent location
+    DB_NAME = 'kis_couture.db'
+    DB_PATH = f'sqlite:////opt/render/project/src/backend/{DB_NAME}'
+    print(f"Using Render database path: {DB_PATH}")
+else:
+    # Local development
+    if DB_PATH.startswith('sqlite:///') and not DB_PATH.startswith('sqlite:////'):
+        # Convert relative path to absolute path
+        DB_NAME = DB_PATH.replace('sqlite:///', '')
+        DB_PATH = f'sqlite:///{os.path.abspath(DB_NAME)}'
+        print(f"Using local database path: {DB_PATH}")
+        
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_PATH
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
@@ -40,7 +50,7 @@ CORS(app, origins=[
 db = SQLAlchemy(app)
 
 # Create all tables with improved error handling
-def init_database():
+def init_database_tables():
     """Initialize database with better error handling"""
     try:
         with app.app_context():
@@ -73,10 +83,6 @@ def init_database():
         import traceback
         traceback.print_exc()
         return False
-
-# Initialize database
-init_database()
-
 
 # Create upload folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -180,6 +186,9 @@ class Order(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None
         }
+
+# Initialize database AFTER models are defined
+init_database_tables()
 
 # Routes - Clients
 
