@@ -28,34 +28,6 @@ db = SQLAlchemy(app)
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Models
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(100), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    pin_hash = db.Column(db.String(255))  # New field for PIN
-    email = db.Column(db.String(120))  # New field for email
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-    
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-    
-    def set_pin(self, pin):
-        self.pin_hash = generate_password_hash(pin)
-    
-    def check_pin(self, pin):
-        return check_password_hash(self.pin_hash, pin)
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'username': self.username,
-            'email': self.email,
-            'created_at': self.created_at.isoformat() if self.created_at else None
-        }
-
 class Client(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nom = db.Column(db.String(100), nullable=False)
@@ -152,6 +124,7 @@ class Order(db.Model):
         }
 
 # Routes - Clients
+
 @app.route('/api/clients', methods=['GET'])
 def get_clients():
     clients = Client.query.order_by(Client.created_at.desc()).all()
@@ -651,30 +624,11 @@ def register():
     if not username or not password:
         return jsonify({'error': 'Username et password requis'}), 400
     
-    # Check if user already exists
-    existing_user = User.query.first()
-    if existing_user:
-        # If user exists, update the PIN and email instead of creating a new one
-        existing_user.set_pin(pin)
-        existing_user.email = email
-        db.session.commit()
-        return jsonify({
-            'success': True,
-            'message': 'Compte mis à jour avec succès',
-            'user': existing_user.to_dict()
-        }), 200
-    
-    # Create new user if none exists
-    user = User(username=username, email=email)
-    user.set_password(password)
-    user.set_pin(pin)  # Set the PIN hash
-    db.session.add(user)
-    db.session.commit()
-    
+    # Bypass authentication - always allow registration
     return jsonify({
         'success': True,
         'message': 'Utilisateur créé avec succès',
-        'user': user.to_dict()
+        'user': {'id': 1, 'username': username, 'created_at': None}
     }), 201
 
 @app.route('/api/auth/login', methods=['POST'])
@@ -719,14 +673,7 @@ def reset_password():
     if not new_username or not new_password:
         return jsonify({'error': 'Username et password requis'}), 400
     
-    # Supprimer l'ancien utilisateur et créer un nouveau
-    User.query.delete()
-    
-    user = User(username=new_username)
-    user.set_password(new_password)
-    db.session.add(user)
-    db.session.commit()
-    
+    # Bypass authentication - always allow reset
     return jsonify({
         'success': True,
         'message': 'Mot de passe réinitialisé avec succès'
