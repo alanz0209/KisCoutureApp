@@ -4,7 +4,7 @@ services:
     name: kis-couture-backend
     runtime: python
     buildCommand: pip install -r backend/requirements.txt
-    startCommand: cd backend && python init_db.py && gunicorn app:app
+    startCommand: cd backend && python init_db.py && gunicorn --bind 0.0.0.0:$PORT app:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9

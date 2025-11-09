@@ -3,30 +3,49 @@
 Script d'initialisation de la base de données
 Crée toutes les tables si elles n'existent pas
 """
+import os
+import sys
 from app import app, db
 
-with app.app_context():
-    db.create_all()
-    print("Database tables created successfully!")
+def init_db():
+    """Initialize database with proper error handling"""
+    try:
+        with app.app_context():
+            print("🔧 Creating database tables...")
+            # Create all tables
+            db.create_all()
+            print("✅ Database tables created successfully!")
+            
+            # Verify tables exist
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            tables = inspector.get_table_names()
+            print(f"📊 Available tables: {tables}")
+            
+            # Check if required tables exist
+            required_tables = ['client', 'measurement', 'order']
+            missing_tables = [table for table in required_tables if table not in tables]
+            
+            if missing_tables:
+                print(f"⚠️  Warning: Missing tables: {missing_tables}")
+                # Try to create them again
+                db.create_all()
+                tables = inspector.get_table_names()
+                print(f"🔄 Tables after retry: {tables}")
+            
+            return True
+    except Exception as e:
+        print(f"❌ Error creating database tables: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 if __name__ == '__main__':
-    with app.app_context():
-        print("🔧 Recréation des tables de la base de données...")
-        # Supprimer toutes les tables existantes
-        db.drop_all()
-        # Créer toutes les tables avec le nouveau schéma
-        db.create_all()
-        print("✅ Tables recréées avec succès !")
-        print("📊 Tables disponibles:")
-        
-        # Vérifier les tables créées
-        from sqlalchemy import inspect
-        inspector = inspect(db.engine)
-        for table_name in inspector.get_table_names():
-            print(f"  - {table_name}")
-            
-        # Vérifier les colonnes de la table measurement
-        print("\n🔍 Colonnes de la table 'measurement':")
-        measurement_columns = inspector.get_columns('measurement')
-        for col in measurement_columns:
-            print(f"  - {col['name']} ({col['type']})")
+    print("🔧 Initializing database...")
+    success = init_db()
+    if success:
+        print("✅ Database initialization completed successfully!")
+        sys.exit(0)
+    else:
+        print("❌ Database initialization failed!")
+        sys.exit(1)

@@ -40,34 +40,43 @@ CORS(app, origins=[
 db = SQLAlchemy(app)
 
 # Create all tables with improved error handling
-try:
-    with app.app_context():
-        # Print database URI for debugging
-        print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
-        
-        # Try to create tables
-        db.create_all()
-        print("Database tables created successfully!")
-        
-        # Verify tables exist
-        from sqlalchemy import inspect
-        inspector = inspect(db.engine)
-        tables = inspector.get_table_names()
-        print(f"Database tables: {tables}")
-        
-        # Ensure all required tables exist
-        required_tables = ['client', 'measurement', 'order']
-        missing_tables = [table for table in required_tables if table not in tables]
-        if missing_tables:
-            print(f"Warning: Missing tables: {missing_tables}")
-            # Try to create them again
+def init_database():
+    """Initialize database with better error handling"""
+    try:
+        with app.app_context():
+            # Print database URI for debugging
+            print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+            
+            # Try to create tables
             db.create_all()
+            print("Database tables created successfully!")
+            
+            # Verify tables exist
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
             tables = inspector.get_table_names()
-            print(f"Database tables after retry: {tables}")
-except Exception as e:
-    print(f"Error creating database tables: {e}")
-    import traceback
-    traceback.print_exc()
+            print(f"Database tables: {tables}")
+            
+            # Ensure all required tables exist
+            required_tables = ['client', 'measurement', 'order']
+            missing_tables = [table for table in required_tables if table not in tables]
+            if missing_tables:
+                print(f"Warning: Missing tables: {missing_tables}")
+                # Try to create them again
+                db.create_all()
+                tables = inspector.get_table_names()
+                print(f"Database tables after retry: {tables}")
+            
+            return True
+    except Exception as e:
+        print(f"Error creating database tables: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+# Initialize database
+init_database()
+
 
 # Create upload folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
