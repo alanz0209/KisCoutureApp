@@ -24,6 +24,10 @@ CORS(app, origins=[
 ])
 db = SQLAlchemy(app)
 
+# Create all tables
+with app.app_context():
+    db.create_all()
+
 # Create upload folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
