@@ -217,11 +217,19 @@ export default {
           await orderAPI.update(formData.value.id, data);
         } else {
           // Création d'une nouvelle commande
+          const total = parseFloat(formData.value.montant_total);
+          const avance = parseFloat(formData.value.montant_avance);
+          const restant = total - avance;
+          
+          // Déterminer le statut automatiquement
+          const status = restant <= 0 ? 'termine' : 'en_cours';
+          
           const data = {
             client_id: parseInt(formData.value.client_id),
-            montant_total: parseFloat(formData.value.montant_total),
-            montant_avance: parseFloat(formData.value.montant_avance),
-            montant_restant: montantRestant.value
+            montant_total: total,
+            montant_avance: avance,
+            montant_restant: restant,
+            status: status
           };
           await orderAPI.create(data);
         }

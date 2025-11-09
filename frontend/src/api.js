@@ -197,6 +197,7 @@ export const measurementAPI = {
       try {
         const response = await api.get(`/measurements/client/${clientId}`);
         const measurements = await localforage.getItem('measurements') || [];
+        // Merge server data with local data, prioritizing server data
         const filtered = measurements.filter(m => m.client_id !== clientId);
         const updated = [...filtered, ...response.data];
         await localforage.setItem('measurements', updated);

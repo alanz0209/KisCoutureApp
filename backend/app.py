@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import inspect
 from datetime import datetime
 import os
 from dotenv import load_dotenv
@@ -11,7 +12,15 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///kis_couture.db')
+# Use absolute path for database on Render
+DB_PATH = os.getenv('DATABASE_URL', 'sqlite:///kis_couture.db')
+if DB_PATH.startswith('sqlite:///') and not DB_PATH.startswith('sqlite:////'):
+    # Convert relative path to absolute path
+    import os
+    DB_NAME = DB_PATH.replace('sqlite:///', '')
+    DB_PATH = f'sqlite:///{os.path.abspath(DB_NAME)}'
+    print(f"Using database path: {DB_PATH}")
+app.config['SQLALCHEMY_DATABASE_URI'] = DB_PATH
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -24,9 +33,25 @@ CORS(app, origins=[
 ])
 db = SQLAlchemy(app)
 
-# Create all tables
-with app.app_context():
-    db.create_all()
+# Create all tables with improved error handling
+try:
+    with app.app_context():
+        # Print database URI for debugging
+        print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+        
+        # Try to create tables
+        db.create_all()
+        print("Database tables created successfully!")
+        
+        # Verify tables exist
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        print(f"Database tables: {tables}")
+except Exception as e:
+    print(f"Error creating database tables: {e}")
+    import traceback
+    traceback.print_exc()
 
 # Create upload folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -348,13 +373,20 @@ def create_order():
     montant_avance = float(data.get('montant_avance', 0))
     montant_restant = montant_total - montant_avance
     
+    # Determine status based on payment completion
+    status = 'termine' if montant_restant <= 0 else 'en_cours'
+    
     order = Order(
         client_id=data['client_id'],
         montant_total=montant_total,
         montant_avance=montant_avance,
         montant_restant=montant_restant,
-        status='en_cours'
+        status=status
     )
+    
+    # Set completed_at if order is already complete
+    if status == 'termine':
+        order.completed_at = datetime.utcnow()
     
     db.session.add(order)
     db.session.commit()
@@ -415,6 +447,16 @@ def get_stats():
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+# Route to initialize database (for debugging)
+@app.route('/api/init-db', methods=['POST'])
+def init_database():
+    try:
+        with app.app_context():
+            db.create_all()
+            return jsonify({'success': True, 'message': 'Database initialized successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Sync endpoint for offline/online synchronization
 @app.route('/api/sync', methods=['POST'])
