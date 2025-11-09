@@ -33,7 +33,9 @@ CORS(app, origins=[
     "http://localhost:5174",
     "http://localhost:5175",
     "http://localhost:5176",
-    "http://localhost:5177"
+    "http://localhost:5177",
+    "http://localhost:5178",
+    "http://localhost:5179"
 ])
 db = SQLAlchemy(app)
 
@@ -478,6 +480,7 @@ def sync_data():
     """Endpoint for syncing data from client to server"""
     try:
         data = request.json
+        print(f"Received sync data: {data}")  # Debug print
         sync_timestamp = datetime.utcnow()
         
         # Keep track of ID mappings for temporary to real IDs
@@ -486,6 +489,16 @@ def sync_data():
         # Process client updates
         if 'clients' in data:
             for client_data in data['clients']:
+                # Remove sync_source if present (it's only used on frontend)
+                client_data.pop('sync_source', None)
+                
+                # Parse datetime strings to Python datetime objects
+                if 'created_at' in client_data and isinstance(client_data['created_at'], str):
+                    try:
+                        client_data['created_at'] = datetime.fromisoformat(client_data['created_at'].replace('Z', '+00:00'))
+                    except ValueError:
+                        client_data['created_at'] = sync_timestamp
+                
                 # For temporary clients, we need to create new records without the temp ID
                 if str(client_data['id']).startswith('temp_'):
                     # Create new client with auto-generated ID
@@ -513,6 +526,13 @@ def sync_data():
                         client.updated_at = sync_timestamp
                     else:
                         # Create new client with the provided ID
+                        # Parse datetime strings to Python datetime objects
+                        if 'created_at' in client_data and isinstance(client_data['created_at'], str):
+                            try:
+                                client_data['created_at'] = datetime.fromisoformat(client_data['created_at'].replace('Z', '+00:00'))
+                            except ValueError:
+                                client_data['created_at'] = sync_timestamp
+                        
                         client = Client(
                             id=client_data['id'],
                             nom=client_data['nom'],
@@ -527,6 +547,16 @@ def sync_data():
         # Process measurement updates
         if 'measurements' in data:
             for measurement_data in data['measurements']:
+                # Remove sync_source if present (it's only used on frontend)
+                measurement_data.pop('sync_source', None)
+                
+                # Parse datetime strings to Python datetime objects
+                if 'created_at' in measurement_data and isinstance(measurement_data['created_at'], str):
+                    try:
+                        measurement_data['created_at'] = datetime.fromisoformat(measurement_data['created_at'].replace('Z', '+00:00'))
+                    except ValueError:
+                        measurement_data['created_at'] = sync_timestamp
+                
                 # Update client_id if it was a temporary ID that got mapped to a real ID
                 original_client_id = measurement_data['client_id']
                 if str(original_client_id).startswith('temp_') and original_client_id in id_mappings:
@@ -579,6 +609,13 @@ def sync_data():
                         measurement.updated_at = sync_timestamp
                     else:
                         # Create new measurement with the provided ID
+                        # Parse datetime strings to Python datetime objects
+                        if 'created_at' in measurement_data and isinstance(measurement_data['created_at'], str):
+                            try:
+                                measurement_data['created_at'] = datetime.fromisoformat(measurement_data['created_at'].replace('Z', '+00:00'))
+                            except ValueError:
+                                measurement_data['created_at'] = sync_timestamp
+                        
                         measurement = Measurement(
                             id=measurement_data['id'],
                             client_id=measurement_data['client_id'],
@@ -605,6 +642,16 @@ def sync_data():
         # Process order updates
         if 'orders' in data:
             for order_data in data['orders']:
+                # Remove sync_source if present (it's only used on frontend)
+                order_data.pop('sync_source', None)
+                
+                # Parse datetime strings to Python datetime objects
+                if 'created_at' in order_data and isinstance(order_data['created_at'], str):
+                    try:
+                        order_data['created_at'] = datetime.fromisoformat(order_data['created_at'].replace('Z', '+00:00'))
+                    except ValueError:
+                        order_data['created_at'] = sync_timestamp
+                
                 # Update client_id if it was a temporary ID that got mapped to a real ID
                 original_client_id = order_data['client_id']
                 if str(original_client_id).startswith('temp_') and original_client_id in id_mappings:
@@ -613,7 +660,7 @@ def sync_data():
                 # For temporary orders, create new records
                 if str(order_data['id']).startswith('temp_'):
                     # Recalculate status based on payment amounts
-                    montant_total = float(order_data['montant_total'])
+                    montant_total = float(order_data.get('montant_total', 0))
                     montant_avance = float(order_data.get('montant_avance', 0))
                     montant_restant = montant_total - montant_avance
                     status = 'termine' if montant_restant <= 0 else order_data.get('status', 'en_cours')
@@ -655,10 +702,17 @@ def sync_data():
                     else:
                         # Create new order with the provided ID
                         # Recalculate status based on payment amounts
-                        montant_total = float(order_data['montant_total'])
+                        montant_total = float(order_data.get('montant_total', 0))
                         montant_avance = float(order_data.get('montant_avance', 0))
                         montant_restant = montant_total - montant_avance
                         status = 'termine' if montant_restant <= 0 else order_data.get('status', 'en_cours')
+                        
+                        # Parse datetime strings to Python datetime objects
+                        if 'created_at' in order_data and isinstance(order_data['created_at'], str):
+                            try:
+                                order_data['created_at'] = datetime.fromisoformat(order_data['created_at'].replace('Z', '+00:00'))
+                            except ValueError:
+                                order_data['created_at'] = sync_timestamp
                         
                         order = Order(
                             id=order_data['id'],
@@ -677,6 +731,9 @@ def sync_data():
         return jsonify({'success': True, 'message': 'Data synchronized successfully', 'id_mappings': id_mappings})
     except Exception as e:
         db.session.rollback()
+        print(f"Sync error: {str(e)}")  # Debug print
+        import traceback
+        traceback.print_exc()  # Print full traceback
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/sync/last-update', methods=['GET'])

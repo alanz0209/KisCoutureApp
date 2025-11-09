@@ -37,12 +37,14 @@ export const clientAPI = {
       try {
         const response = await api.post('/clients', data);
         const clients = await localforage.getItem('clients') || [];
-        clients.push(response.data);
+        // Add sync_source to indicate this was created online
+        const clientWithSource = { ...response.data, sync_source: 'online' };
+        clients.push(clientWithSource);
         await localforage.setItem('clients', clients);
-        return response.data;
+        return clientWithSource;
       } catch (error) {
         const tempId = `temp_${Date.now()}`;
-        const newClient = { ...data, id: tempId, created_at: new Date().toISOString() };
+        const newClient = { ...data, id: tempId, created_at: new Date().toISOString(), sync_source: 'offline' };
         const clients = await localforage.getItem('clients') || [];
         clients.push(newClient);
         await localforage.setItem('clients', clients);
@@ -50,7 +52,7 @@ export const clientAPI = {
       }
     }
     const tempId = `temp_${Date.now()}`;
-    const newClient = { ...data, id: tempId, created_at: new Date().toISOString() };
+    const newClient = { ...data, id: tempId, created_at: new Date().toISOString(), sync_source: 'offline' };
     const clients = await localforage.getItem('clients') || [];
     clients.push(newClient);
     await localforage.setItem('clients', clients);
@@ -126,12 +128,19 @@ export const orderAPI = {
       try {
         const response = await api.post('/orders', data);
         const orders = await localforage.getItem('orders') || [];
-        orders.push(response.data);
+        // Add sync_source to indicate this was created online
+        const orderWithSource = { ...response.data, sync_source: 'online' };
+        orders.push(orderWithSource);
         await localforage.setItem('orders', orders);
-        return response.data;
+        return orderWithSource;
       } catch (error) {
         const tempId = `temp_${Date.now()}`;
-        const newOrder = { ...data, id: tempId };
+        // Determine status based on payment completion for offline orders too
+        const total = parseFloat(data.montant_total) || 0;
+        const avance = parseFloat(data.montant_avance) || 0;
+        const restant = total - avance;
+        const status = restant <= 0 ? 'termine' : 'en_cours';
+        const newOrder = { ...data, id: tempId, status, montant_restant: restant, sync_source: 'offline' };
         const orders = await localforage.getItem('orders') || [];
         orders.push(newOrder);
         await localforage.setItem('orders', orders);
@@ -144,7 +153,7 @@ export const orderAPI = {
     const avance = parseFloat(data.montant_avance) || 0;
     const restant = total - avance;
     const status = restant <= 0 ? 'termine' : 'en_cours';
-    const newOrder = { ...data, id: tempId, status, montant_restant: restant };
+    const newOrder = { ...data, id: tempId, status, montant_restant: restant, sync_source: 'offline' };
     const orders = await localforage.getItem('orders') || [];
     orders.push(newOrder);
     await localforage.setItem('orders', orders);
@@ -333,7 +342,8 @@ export const measurementAPI = {
       description: formData.get('description') || null,  // New field
       image_path: null,
       image_data: null,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      sync_source: 'offline' // Explicitly mark as offline created
     };
     
     // Stocker l'image en base64 si présente
@@ -413,17 +423,29 @@ export const syncData = async () => {
     const measurements = await localforage.getItem('measurements') || [];
     
     // Separate new/modified data from existing data
+    // For offline-created items (temporary IDs)
     const newClients = clients.filter(c => String(c.id).startsWith('temp_'));
-    const modifiedClients = clients.filter(c => !String(c.id).startsWith('temp_') && 
-      (!lastSync || new Date(c.updated_at) > new Date(lastSync)));
-    
     const newOrders = orders.filter(o => String(o.id).startsWith('temp_'));
-    const modifiedOrders = orders.filter(o => !String(o.id).startsWith('temp_') && 
-      (!lastSync || new Date(o.updated_at) > new Date(lastSync)));
-    
     const newMeasurements = measurements.filter(m => String(m.id).startsWith('temp_'));
-    const modifiedMeasurements = measurements.filter(m => !String(m.id).startsWith('temp_') && 
-      (!lastSync || new Date(m.updated_at) > new Date(lastSync)));
+    
+    // For online-created items that have been modified offline
+    const modifiedClients = clients.filter(c => 
+      !String(c.id).startsWith('temp_') && 
+      c.sync_source === 'online' &&
+      (!lastSync || new Date(c.updated_at) > new Date(lastSync))
+    );
+    
+    const modifiedOrders = orders.filter(o => 
+      !String(o.id).startsWith('temp_') && 
+      o.sync_source === 'online' &&
+      (!lastSync || new Date(o.updated_at) > new Date(lastSync))
+    );
+    
+    const modifiedMeasurements = measurements.filter(m => 
+      !String(m.id).startsWith('temp_') && 
+      m.sync_source === 'online' &&
+      (!lastSync || new Date(m.updated_at) > new Date(lastSync))
+    );
     
     // Prepare sync data
     const syncData = {
@@ -451,20 +473,32 @@ export const syncData = async () => {
           // Update clients
           const clientIndex = updatedClients.findIndex(c => c.id === tempId);
           if (clientIndex !== -1) {
-            updatedClients[clientIndex] = { ...updatedClients[clientIndex], id: realId };
+            updatedClients[clientIndex] = { 
+              ...updatedClients[clientIndex], 
+              id: realId,
+              sync_source: 'online' // Now marked as online after sync
+            };
           }
           
           // Update measurements that reference this client
           updatedMeasurements.forEach((measurement, index) => {
             if (measurement.client_id === tempId) {
-              updatedMeasurements[index] = { ...measurement, client_id: realId };
+              updatedMeasurements[index] = { 
+                ...measurement, 
+                client_id: realId,
+                sync_source: 'online' // Now marked as online after sync
+              };
             }
           });
           
           // Update orders that reference this client
           updatedOrders.forEach((order, index) => {
             if (order.client_id === tempId) {
-              updatedOrders[index] = { ...order, client_id: realId };
+              updatedOrders[index] = { 
+                ...order, 
+                client_id: realId,
+                sync_source: 'online' // Now marked as online after sync
+              };
             }
           });
         });
@@ -483,10 +517,26 @@ export const syncData = async () => {
       api.get('/measurements') // New endpoint to get all measurements
     ]);
     
+    // Add sync_source to server data
+    const serverClientsWithSource = serverClients.data.map(client => ({
+      ...client,
+      sync_source: 'online'
+    }));
+    
+    const serverOrdersWithSource = serverOrders.data.map(order => ({
+      ...order,
+      sync_source: 'online'
+    }));
+    
+    const serverMeasurementsWithSource = serverMeasurements.data.map(measurement => ({
+      ...measurement,
+      sync_source: 'online'
+    }));
+    
     // Merge server data with local data
-    const mergedClients = mergeData(clients, serverClients.data, 'id');
-    const mergedOrders = mergeData(orders, serverOrders.data, 'id');
-    const mergedMeasurements = mergeData(measurements, serverMeasurements.data, 'id');
+    const mergedClients = mergeData(clients, serverClientsWithSource, 'id');
+    const mergedOrders = mergeData(orders, serverOrdersWithSource, 'id');
+    const mergedMeasurements = mergeData(measurements, serverMeasurementsWithSource, 'id');
     
     // Save merged data
     await localforage.setItem('clients', mergedClients);
@@ -528,19 +578,34 @@ const mergeData = (localData, serverData, idField) => {
         merged.push(localItem);
       }
     } else {
-      // For non-temp items, server data takes precedence
-      // But we should check if local data is more recent
+      // For non-temp items, check the sync_source
       const serverItem = serverMap.get(localItem[idField]);
       if (serverItem) {
-        // If server item exists, check timestamps
-        const localUpdated = new Date(localItem.updated_at || localItem.created_at || 0);
-        const serverUpdated = new Date(serverItem.updated_at || serverItem.created_at || 0);
-        
-        if (localUpdated > serverUpdated) {
-          // Local data is more recent, update the merged item
-          const index = merged.findIndex(item => item[idField] === localItem[idField]);
-          if (index !== -1) {
-            merged[index] = localItem;
+        // If server item exists, check sync_source and timestamps
+        if (localItem.sync_source === 'offline') {
+          // Local item was created offline, but has been synced - keep server version
+          // But check if local data is more recent
+          const localUpdated = new Date(localItem.updated_at || localItem.created_at || 0);
+          const serverUpdated = new Date(serverItem.updated_at || serverItem.created_at || 0);
+          
+          if (localUpdated > serverUpdated) {
+            // Local data is more recent, update the merged item
+            const index = merged.findIndex(item => item[idField] === localItem[idField]);
+            if (index !== -1) {
+              merged[index] = { ...localItem, sync_source: 'online' }; // Mark as online after merge
+            }
+          }
+        } else {
+          // Both items are online, check timestamps
+          const localUpdated = new Date(localItem.updated_at || localItem.created_at || 0);
+          const serverUpdated = new Date(serverItem.updated_at || serverItem.created_at || 0);
+          
+          if (localUpdated > serverUpdated) {
+            // Local data is more recent, update the merged item
+            const index = merged.findIndex(item => item[idField] === localItem[idField]);
+            if (index !== -1) {
+              merged[index] = localItem;
+            }
           }
         }
       } else {
