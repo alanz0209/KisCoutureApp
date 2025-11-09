@@ -568,6 +568,11 @@ def sync_data():
                 # Remove sync_source if present (it's only used on frontend)
                 measurement_data.pop('sync_source', None)
                 
+                # Skip measurements without a client_id
+                if measurement_data.get('client_id') is None:
+                    print(f"Skipping measurement with no client_id: {measurement_data.get('id')}")
+                    continue
+                
                 # Parse datetime strings to Python datetime objects
                 if 'created_at' in measurement_data and isinstance(measurement_data['created_at'], str):
                     try:
