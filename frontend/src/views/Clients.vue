@@ -117,6 +117,18 @@
                   <label>Bas (cm)</label>
                   <input type="text" v-model="formData.measurements.bas" placeholder="Ex: 40 ou 40-42" />
                 </div>
+                <div class="form-group">
+                  <label>Longueur Genou (cm)</label>
+                  <input type="text" v-model="formData.measurements.longueur_genou" placeholder="Ex: 45 ou 45-50" />
+                </div>
+                <div class="form-group">
+                  <label>Tour Mollet (cm)</label>
+                  <input type="text" v-model="formData.measurements.tour_mollet" placeholder="Ex: 30 ou 30-35" />
+                </div>
+                <div class="form-group full-width">
+                  <label>Description</label>
+                  <textarea v-model="formData.measurements.description" placeholder="Informations supplémentaires sur le client ou les mesures..."></textarea>
+                </div>
                 <div class="form-group full-width">
                   <label>Image de référence (optionnelle)</label>
                   <input type="file" accept="image/*" @change="handleImageChange" />
@@ -193,6 +205,12 @@
               </div>
               <div v-if="clientMeasurements.bas" class="measure-item">
                 <strong>Bas:</strong> {{ clientMeasurements.bas }} cm
+              </div>
+              <div v-if="clientMeasurements.longueur_genou" class="measure-item">
+                <strong>Long. Genou:</strong> {{ clientMeasurements.longueur_genou }} cm
+              </div>
+              <div v-if="clientMeasurements.tour_mollet" class="measure-item">
+                <strong>Tour Mollet:</strong> {{ clientMeasurements.tour_mollet }} cm
               </div>
               <div v-if="clientMeasurements.description" class="measure-item">
                 <strong>Description:</strong> {{ clientMeasurements.description }}
@@ -282,7 +300,10 @@ export default {
         bassin: '',
         cuisse: '',
         longueur_pantalon: '',
-        bas: ''
+        bas: '',
+        longueur_genou: '',  // New field
+        tour_mollet: '',  // New field
+        description: ''  // New field
       },
       image: null
     });
@@ -307,7 +328,7 @@ export default {
       const m = clientMeasurements.value;
       return m.do || m.poitrine || m.taille || m.longueur || m.manche || 
              m.tour_manche || m.ceinture || m.bassin || m.cuisse || 
-             m.longueur_pantalon || m.bas;
+             m.longueur_pantalon || m.bas || m.longueur_genou || m.tour_mollet; // Added new fields
     });
 
     const fetchClients = async () => {
@@ -365,14 +386,16 @@ export default {
           cuisse: clientMeasurements.value?.cuisse || '',
           longueur_pantalon: clientMeasurements.value?.longueur_pantalon || '',
           bas: clientMeasurements.value?.bas || '',
-          image: null
+          longueur_genou: clientMeasurements.value?.longueur_genou || '',  // New field
+          tour_mollet: clientMeasurements.value?.tour_mollet || '',  // New field
+          description: clientMeasurements.value?.description || ''  // New field
         }
       };
     };
 
     const handleImageChange = (event) => {
       if (event.target.files && event.target.files[0]) {
-        formData.value.measurements.image = event.target.files[0];
+        formData.value.image = event.target.files[0];
       }
     };
 
@@ -403,9 +426,9 @@ export default {
               }
             });
             
-            const hasImage = formData.value.measurements.image && formData.value.measurements.image.size > 0;
+            const hasImage = formData.value.image && formData.value.image.size > 0;
             if (hasImage) {
-              measurementFormData.append('image', formData.value.measurements.image);
+              measurementFormData.append('image', formData.value.image);
             }
             
             await measurementAPI.update(client.id, measurementFormData, hasImage);
@@ -433,8 +456,8 @@ export default {
               }
             });
             
-            if (formData.value.measurements.image) {
-              measurementFormData.append('image', formData.value.measurements.image);
+            if (formData.value.image) {
+              measurementFormData.append('image', formData.value.image);
             }
             
             await measurementAPI.create(measurementFormData);
@@ -514,8 +537,11 @@ export default {
           cuisse: '',
           longueur_pantalon: '',
           bas: '',
-          image: null
-        }
+          longueur_genou: '',  // New field
+          tour_mollet: '',  // New field
+          description: ''  // New field
+        },
+        image: null
       };
     };
 
@@ -545,6 +571,8 @@ export default {
       editMode,
       formData,
       hasMeasurements,
+      filteredClients,
+      searchQuery,
       selectClient,
       editClient,
       handleImageChange,

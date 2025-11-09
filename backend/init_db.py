@@ -30,9 +30,3 @@ if __name__ == '__main__':
         measurement_columns = inspector.get_columns('measurement')
         for col in measurement_columns:
             print(f"  - {col['name']} ({col['type']})")
-            
-        # Vérifier les colonnes de la table user
-        print("\n🔍 Colonnes de la table 'user':")
-        user_columns = inspector.get_columns('user')
-        for col in user_columns:
-            print(f"  - {col['name']} ({col['type']})")

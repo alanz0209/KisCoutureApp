@@ -269,6 +269,9 @@ export const measurementAPI = {
       cuisse: parseFloat(formData.get('cuisse')) || null,
       longueur_pantalon: parseFloat(formData.get('longueur_pantalon')) || null,
       bas: parseFloat(formData.get('bas')) || null,
+      longueur_genou: parseFloat(formData.get('longueur_genou')) || null,  // New field
+      tour_mollet: parseFloat(formData.get('tour_mollet')) || null,  // New field
+      description: formData.get('description') || null,  // New field
       image_path: null,
       image_data: null,
       created_at: index !== -1 ? measurements[index].created_at : new Date().toISOString()
@@ -312,6 +315,9 @@ export const measurementAPI = {
       cuisse: parseFloat(formData.get('cuisse')) || null,
       longueur_pantalon: parseFloat(formData.get('longueur_pantalon')) || null,
       bas: parseFloat(formData.get('bas')) || null,
+      longueur_genou: parseFloat(formData.get('longueur_genou')) || null,  // New field
+      tour_mollet: parseFloat(formData.get('tour_mollet')) || null,  // New field
+      description: formData.get('description') || null,  // New field
       image_path: null,
       image_data: null,
       created_at: new Date().toISOString()

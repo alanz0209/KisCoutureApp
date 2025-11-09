@@ -67,6 +67,8 @@ class Measurement(db.Model):
     cuisse = db.Column(db.String(50))
     longueur_pantalon = db.Column(db.String(50))
     bas = db.Column(db.String(50))
+    longueur_genou = db.Column(db.String(50))  # New field
+    tour_mollet = db.Column(db.String(50))  # New field
     description = db.Column(db.Text)  # New field for additional information
     
     image_path = db.Column(db.String(255))  # Chemin de l'image
@@ -89,6 +91,8 @@ class Measurement(db.Model):
             'cuisse': self.cuisse,
             'longueur_pantalon': self.longueur_pantalon,
             'bas': self.bas,
+            'longueur_genou': self.longueur_genou,  # New field
+            'tour_mollet': self.tour_mollet,  # New field
             'description': self.description,  # New field
             'image_path': self.image_path,
             'created_at': self.created_at.isoformat() if self.created_at else None,
@@ -200,6 +204,8 @@ def create_measurement():
         cuisse=data.get('cuisse') if data.get('cuisse') else None,
         longueur_pantalon=data.get('longueur_pantalon') if data.get('longueur_pantalon') else None,
         bas=data.get('bas') if data.get('bas') else None,
+        longueur_genou=data.get('longueur_genou') if data.get('longueur_genou') else None,  # New field
+        tour_mollet=data.get('tour_mollet') if data.get('tour_mollet') else None,  # New field
         description=data.get('description') if data.get('description') else None  # New field
     )
     
@@ -221,18 +227,20 @@ def update_measurement(id):
     measurement = Measurement.query.get_or_404(id)
     data = request.form
     
-    measurement.do = float(data.get('do', 0)) if data.get('do') else measurement.do
-    measurement.poitrine = float(data.get('poitrine', 0)) if data.get('poitrine') else measurement.poitrine
-    measurement.taille = float(data.get('taille', 0)) if data.get('taille') else measurement.taille
-    measurement.longueur = float(data.get('longueur', 0)) if data.get('longueur') else measurement.longueur
-    measurement.manche = float(data.get('manche', 0)) if data.get('manche') else measurement.manche
-    measurement.tour_manche = float(data.get('tour_manche', 0)) if data.get('tour_manche') else measurement.tour_manche
-    measurement.ceinture = float(data.get('ceinture', 0)) if data.get('ceinture') else measurement.ceinture
-    measurement.bassin = float(data.get('bassin', 0)) if data.get('bassin') else measurement.bassin
-    measurement.cuisse = float(data.get('cuisse', 0)) if data.get('cuisse') else measurement.cuisse
-    measurement.longueur_pantalon = float(data.get('longueur_pantalon', 0)) if data.get('longueur_pantalon') else measurement.longueur_pantalon
-    measurement.bas = float(data.get('bas', 0)) if data.get('bas') else measurement.bas
-    measurement.description = data.get('description') if data.get('description') else measurement.description  # New field
+    measurement.do = data.get('do', measurement.do) if data.get('do') else measurement.do
+    measurement.poitrine = data.get('poitrine', measurement.poitrine) if data.get('poitrine') else measurement.poitrine
+    measurement.taille = data.get('taille', measurement.taille) if data.get('taille') else measurement.taille
+    measurement.longueur = data.get('longueur', measurement.longueur) if data.get('longueur') else measurement.longueur
+    measurement.manche = data.get('manche', measurement.manche) if data.get('manche') else measurement.manche
+    measurement.tour_manche = data.get('tour_manche', measurement.tour_manche) if data.get('tour_manche') else measurement.tour_manche
+    measurement.ceinture = data.get('ceinture', measurement.ceinture) if data.get('ceinture') else measurement.ceinture
+    measurement.bassin = data.get('bassin', measurement.bassin) if data.get('bassin') else measurement.bassin
+    measurement.cuisse = data.get('cuisse', measurement.cuisse) if data.get('cuisse') else measurement.cuisse
+    measurement.longueur_pantalon = data.get('longueur_pantalon', measurement.longueur_pantalon) if data.get('longueur_pantalon') else measurement.longueur_pantalon
+    measurement.bas = data.get('bas', measurement.bas) if data.get('bas') else measurement.bas
+    measurement.longueur_genou = data.get('longueur_genou', measurement.longueur_genou) if data.get('longueur_genou') else measurement.longueur_genou  # New field
+    measurement.tour_mollet = data.get('tour_mollet', measurement.tour_mollet) if data.get('tour_mollet') else measurement.tour_mollet  # New field
+    measurement.description = data.get('description', measurement.description) if data.get('description') else measurement.description  # New field
     
     # Handle image upload
     if 'image' in request.files:
@@ -260,33 +268,37 @@ def update_client_measurement(client_id):
     
     if measurement:
         # Mise à jour
-        measurement.do = float(data.get('do', 0)) if data.get('do') else None
-        measurement.poitrine = float(data.get('poitrine', 0)) if data.get('poitrine') else None
-        measurement.taille = float(data.get('taille', 0)) if data.get('taille') else None
-        measurement.longueur = float(data.get('longueur', 0)) if data.get('longueur') else None
-        measurement.manche = float(data.get('manche', 0)) if data.get('manche') else None
-        measurement.tour_manche = float(data.get('tour_manche', 0)) if data.get('tour_manche') else None
-        measurement.ceinture = float(data.get('ceinture', 0)) if data.get('ceinture') else None
-        measurement.bassin = float(data.get('bassin', 0)) if data.get('bassin') else None
-        measurement.cuisse = float(data.get('cuisse', 0)) if data.get('cuisse') else None
-        measurement.longueur_pantalon = float(data.get('longueur_pantalon', 0)) if data.get('longueur_pantalon') else None
-        measurement.bas = float(data.get('bas', 0)) if data.get('bas') else None
-        measurement.description = data.get('description') if data.get('description') else None  # New field
+        measurement.do = data.get('do', measurement.do) if data.get('do') else measurement.do
+        measurement.poitrine = data.get('poitrine', measurement.poitrine) if data.get('poitrine') else measurement.poitrine
+        measurement.taille = data.get('taille', measurement.taille) if data.get('taille') else measurement.taille
+        measurement.longueur = data.get('longueur', measurement.longueur) if data.get('longueur') else measurement.longueur
+        measurement.manche = data.get('manche', measurement.manche) if data.get('manche') else measurement.manche
+        measurement.tour_manche = data.get('tour_manche', measurement.tour_manche) if data.get('tour_manche') else measurement.tour_manche
+        measurement.ceinture = data.get('ceinture', measurement.ceinture) if data.get('ceinture') else measurement.ceinture
+        measurement.bassin = data.get('bassin', measurement.bassin) if data.get('bassin') else measurement.bassin
+        measurement.cuisse = data.get('cuisse', measurement.cuisse) if data.get('cuisse') else measurement.cuisse
+        measurement.longueur_pantalon = data.get('longueur_pantalon', measurement.longueur_pantalon) if data.get('longueur_pantalon') else measurement.longueur_pantalon
+        measurement.bas = data.get('bas', measurement.bas) if data.get('bas') else measurement.bas
+        measurement.longueur_genou = data.get('longueur_genou', measurement.longueur_genou) if data.get('longueur_genou') else measurement.longueur_genou  # New field
+        measurement.tour_mollet = data.get('tour_mollet', measurement.tour_mollet) if data.get('tour_mollet') else measurement.tour_mollet  # New field
+        measurement.description = data.get('description', measurement.description) if data.get('description') else measurement.description  # New field
     else:
         # Création
         measurement = Measurement(
             client_id=client_id,
-            do=float(data.get('do', 0)) if data.get('do') else None,
-            poitrine=float(data.get('poitrine', 0)) if data.get('poitrine') else None,
-            taille=float(data.get('taille', 0)) if data.get('taille') else None,
-            longueur=float(data.get('longueur', 0)) if data.get('longueur') else None,
-            manche=float(data.get('manche', 0)) if data.get('manche') else None,
-            tour_manche=float(data.get('tour_manche', 0)) if data.get('tour_manche') else None,
-            ceinture=float(data.get('ceinture', 0)) if data.get('ceinture') else None,
-            bassin=float(data.get('bassin', 0)) if data.get('bassin') else None,
-            cuisse=float(data.get('cuisse', 0)) if data.get('cuisse') else None,
-            longueur_pantalon=float(data.get('longueur_pantalon', 0)) if data.get('longueur_pantalon') else None,
-            bas=float(data.get('bas', 0)) if data.get('bas') else None,
+            do=data.get('do') if data.get('do') else None,
+            poitrine=data.get('poitrine') if data.get('poitrine') else None,
+            taille=data.get('taille') if data.get('taille') else None,
+            longueur=data.get('longueur') if data.get('longueur') else None,
+            manche=data.get('manche') if data.get('manche') else None,
+            tour_manche=data.get('tour_manche') if data.get('tour_manche') else None,
+            ceinture=data.get('ceinture') if data.get('ceinture') else None,
+            bassin=data.get('bassin') if data.get('bassin') else None,
+            cuisse=data.get('cuisse') if data.get('cuisse') else None,
+            longueur_pantalon=data.get('longueur_pantalon') if data.get('longueur_pantalon') else None,
+            bas=data.get('bas') if data.get('bas') else None,
+            longueur_genou=data.get('longueur_genou') if data.get('longueur_genou') else None,  # New field
+            tour_mollet=data.get('tour_mollet') if data.get('tour_mollet') else None,  # New field
             description=data.get('description') if data.get('description') else None  # New field
         )
         db.session.add(measurement)
@@ -464,7 +476,9 @@ def sync_data():
                         cuisse=measurement_data.get('cuisse'),
                         longueur_pantalon=measurement_data.get('longueur_pantalon'),
                         bas=measurement_data.get('bas'),
-                        description=measurement_data.get('description'),
+                        longueur_genou=measurement_data.get('longueur_genou'),  # New field
+                        tour_mollet=measurement_data.get('tour_mollet'),  # New field
+                        description=measurement_data.get('description'),  # New field
                         image_path=measurement_data.get('image_path'),
                         created_at=measurement_data.get('created_at', sync_timestamp),
                         updated_at=sync_timestamp
@@ -487,7 +501,9 @@ def sync_data():
                         measurement.cuisse = measurement_data.get('cuisse', measurement.cuisse)
                         measurement.longueur_pantalon = measurement_data.get('longueur_pantalon', measurement.longueur_pantalon)
                         measurement.bas = measurement_data.get('bas', measurement.bas)
-                        measurement.description = measurement_data.get('description', measurement.description)
+                        measurement.longueur_genou = measurement_data.get('longueur_genou', measurement.longueur_genou)  # New field
+                        measurement.tour_mollet = measurement_data.get('tour_mollet', measurement.tour_mollet)  # New field
+                        measurement.description = measurement_data.get('description', measurement.description)  # New field
                         measurement.image_path = measurement_data.get('image_path', measurement.image_path)
                         measurement.updated_at = sync_timestamp
                     else:
@@ -506,7 +522,9 @@ def sync_data():
                             cuisse=measurement_data.get('cuisse'),
                             longueur_pantalon=measurement_data.get('longueur_pantalon'),
                             bas=measurement_data.get('bas'),
-                            description=measurement_data.get('description'),
+                            longueur_genou=measurement_data.get('longueur_genou'),  # New field
+                            tour_mollet=measurement_data.get('tour_mollet'),  # New field
+                            description=measurement_data.get('description'),  # New field
                             image_path=measurement_data.get('image_path'),
                             created_at=measurement_data.get('created_at', sync_timestamp),
                             updated_at=sync_timestamp
