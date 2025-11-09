@@ -139,7 +139,12 @@ export const orderAPI = {
       }
     }
     const tempId = `temp_${Date.now()}`;
-    const newOrder = { ...data, id: tempId, status: 'en_cours' };
+    // Determine status based on payment completion for offline orders too
+    const total = parseFloat(data.montant_total) || 0;
+    const avance = parseFloat(data.montant_avance) || 0;
+    const restant = total - avance;
+    const status = restant <= 0 ? 'termine' : 'en_cours';
+    const newOrder = { ...data, id: tempId, status, montant_restant: restant };
     const orders = await localforage.getItem('orders') || [];
     orders.push(newOrder);
     await localforage.setItem('orders', orders);
@@ -423,7 +428,45 @@ export const syncData = async () => {
     // Only sync if there's data to sync
     if (syncData.clients.length > 0 || syncData.orders.length > 0 || syncData.measurements.length > 0) {
       // Send data to server
-      await api.post('/sync', syncData);
+      const response = await api.post('/sync', syncData);
+      
+      // Handle ID mappings if provided
+      if (response.data.id_mappings) {
+        // Update local data with new IDs
+        const updatedClients = [...clients];
+        const updatedMeasurements = [...measurements];
+        const updatedOrders = [...orders];
+        
+        // Update client IDs
+        Object.keys(response.data.id_mappings).forEach(tempId => {
+          const realId = response.data.id_mappings[tempId];
+          
+          // Update clients
+          const clientIndex = updatedClients.findIndex(c => c.id === tempId);
+          if (clientIndex !== -1) {
+            updatedClients[clientIndex] = { ...updatedClients[clientIndex], id: realId };
+          }
+          
+          // Update measurements that reference this client
+          updatedMeasurements.forEach((measurement, index) => {
+            if (measurement.client_id === tempId) {
+              updatedMeasurements[index] = { ...measurement, client_id: realId };
+            }
+          });
+          
+          // Update orders that reference this client
+          updatedOrders.forEach((order, index) => {
+            if (order.client_id === tempId) {
+              updatedOrders[index] = { ...order, client_id: realId };
+            }
+          });
+        });
+        
+        // Save updated data
+        await localforage.setItem('clients', updatedClients);
+        await localforage.setItem('measurements', updatedMeasurements);
+        await localforage.setItem('orders', updatedOrders);
+      }
     }
     
     // Get all server data

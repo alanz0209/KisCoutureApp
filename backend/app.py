@@ -466,6 +466,9 @@ def sync_data():
         data = request.json
         sync_timestamp = datetime.utcnow()
         
+        # Keep track of ID mappings for temporary to real IDs
+        id_mappings = {}
+        
         # Process client updates
         if 'clients' in data:
             for client_data in data['clients']:
@@ -481,6 +484,9 @@ def sync_data():
                         updated_at=sync_timestamp
                     )
                     db.session.add(client)
+                    db.session.flush()  # Get the generated ID without committing
+                    # Store mapping from temp ID to real ID
+                    id_mappings[client_data['id']] = client.id
                 else:
                     # Check if client exists
                     client = Client.query.get(client_data['id'])
@@ -507,6 +513,11 @@ def sync_data():
         # Process measurement updates
         if 'measurements' in data:
             for measurement_data in data['measurements']:
+                # Update client_id if it was a temporary ID that got mapped to a real ID
+                original_client_id = measurement_data['client_id']
+                if str(original_client_id).startswith('temp_') and original_client_id in id_mappings:
+                    measurement_data['client_id'] = id_mappings[original_client_id]
+                
                 # For temporary measurements, create new records
                 if str(measurement_data['id']).startswith('temp_'):
                     measurement = Measurement(
@@ -580,6 +591,11 @@ def sync_data():
         # Process order updates
         if 'orders' in data:
             for order_data in data['orders']:
+                # Update client_id if it was a temporary ID that got mapped to a real ID
+                original_client_id = order_data['client_id']
+                if str(original_client_id).startswith('temp_') and original_client_id in id_mappings:
+                    order_data['client_id'] = id_mappings[original_client_id]
+                
                 # For temporary orders, create new records
                 if str(order_data['id']).startswith('temp_'):
                     order = Order(
@@ -621,7 +637,7 @@ def sync_data():
                         db.session.add(order)
         
         db.session.commit()
-        return jsonify({'success': True, 'message': 'Data synchronized successfully'})
+        return jsonify({'success': True, 'message': 'Data synchronized successfully', 'id_mappings': id_mappings})
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500

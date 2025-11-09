@@ -170,9 +170,9 @@
             </div>
           </div>
 
-          <div v-if="clientMeasurements" class="section">
+          <div class="section">
             <h3>Mesures</h3>
-            <div class="measurements-display">
+            <div class="measurements-display" v-if="clientMeasurements">
               <div v-if="clientMeasurements.do" class="measure-item">
                 <strong>Dos:</strong> {{ clientMeasurements.do }} cm
               </div>
@@ -218,6 +218,9 @@
               <div v-if="!hasMeasurements" class="no-data">
                 Aucune mesure enregistrée
               </div>
+            </div>
+            <div class="no-data" v-else>
+              Aucune mesure enregistrée
             </div>
 
             <div v-if="clientMeasurements?.image_path || clientMeasurements?.image_data" class="image-preview">
@@ -328,7 +331,7 @@ export default {
       const m = clientMeasurements.value;
       return m.do || m.poitrine || m.taille || m.longueur || m.manche || 
              m.tour_manche || m.ceinture || m.bassin || m.cuisse || 
-             m.longueur_pantalon || m.bas || m.longueur_genou || m.tour_mollet; // Added new fields
+             m.longueur_pantalon || m.bas || m.longueur_genou || m.tour_mollet || m.description; // Added new fields
     });
 
     const fetchClients = async () => {
@@ -345,8 +348,13 @@ export default {
       
       // Charger les mesures du client
       try {
-        const measurements = await measurementAPI.getByClient(client.id);
-        clientMeasurements.value = measurements.length > 0 ? measurements[0] : null;
+        // Ne pas essayer de récupérer les mesures pour les clients temporaires
+        if (String(client.id).startsWith('temp_')) {
+          clientMeasurements.value = null;
+        } else {
+          const measurements = await measurementAPI.getByClient(client.id);
+          clientMeasurements.value = measurements.length > 0 ? measurements[0] : null;
+        }
       } catch (error) {
         console.error('Erreur chargement mesures:', error);
         clientMeasurements.value = null;
