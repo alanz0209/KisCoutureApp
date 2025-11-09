@@ -348,13 +348,9 @@ export default {
       
       // Charger les mesures du client
       try {
-        // Ne pas essayer de récupérer les mesures pour les clients temporaires
-        if (String(client.id).startsWith('temp_')) {
-          clientMeasurements.value = null;
-        } else {
-          const measurements = await measurementAPI.getByClient(client.id);
-          clientMeasurements.value = measurements.length > 0 ? measurements[0] : null;
-        }
+        // For temporary clients, we can still get measurements from local storage
+        const measurements = await measurementAPI.getByClient(client.id);
+        clientMeasurements.value = measurements.length > 0 ? measurements[0] : null;
       } catch (error) {
         console.error('Erreur chargement mesures:', error);
         clientMeasurements.value = null;

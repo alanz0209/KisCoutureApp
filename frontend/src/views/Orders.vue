@@ -225,7 +225,7 @@ export default {
           const status = restant <= 0 ? 'termine' : 'en_cours';
           
           const data = {
-            client_id: parseInt(formData.value.client_id),
+            client_id: formData.value.client_id, // Keep as string to handle temp IDs
             montant_total: total,
             montant_avance: avance,
             montant_restant: restant,
@@ -358,6 +358,7 @@ export default {
       markAsComplete,
       markAsInProgress,
       handleDelete,
+      resetForm,
       getClientName,
       formatCurrency,
       formatDate

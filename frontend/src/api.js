@@ -198,9 +198,11 @@ export const orderAPI = {
 // Measurements API
 export const measurementAPI = {
   async getByClient(clientId) {
-    // Don't try to fetch measurements for temporary client IDs
+    // For temporary client IDs, check local storage directly
     if (String(clientId).startsWith('temp_')) {
-      return [];
+      const data = await localforage.getItem('measurements') || [];
+      const measurements = data.filter(m => String(m.client_id) === String(clientId));
+      return measurements;
     }
     
     if (isOnline()) {
@@ -268,7 +270,7 @@ export const measurementAPI = {
     
     const updatedMeasurement = {
       id: index !== -1 ? measurements[index].id : `temp_${Date.now()}`,
-      client_id: parseInt(formData.get('client_id')),
+      client_id: formData.get('client_id'), // Keep as string to handle temp IDs
       do: parseFloat(formData.get('do')) || null,
       poitrine: parseFloat(formData.get('poitrine')) || null,
       taille: parseFloat(formData.get('taille')) || null,
@@ -314,7 +316,7 @@ export const measurementAPI = {
     const tempId = `temp_${Date.now()}`;
     const measurement = {
       id: tempId,
-      client_id: parseInt(formData.get('client_id')),
+      client_id: formData.get('client_id'), // Keep as string to handle temp IDs
       do: parseFloat(formData.get('do')) || null,
       poitrine: parseFloat(formData.get('poitrine')) || null,
       taille: parseFloat(formData.get('taille')) || null,
