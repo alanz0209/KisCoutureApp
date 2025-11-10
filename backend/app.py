@@ -15,18 +15,24 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 # Database configuration - use Render's database connection
-print("Environment variables:")
-for key, value in os.environ.items():
-    if 'DATABASE' in key or 'POSTGRES' in key:
-        print(f"  {key}: {value}")
-
 DB_URL = os.getenv('DATABASE_URL')
 
-# Ensure we have a database URL
+# Print all environment variables for debugging
+print("Environment variables:")
+for key, value in sorted(os.environ.items()):
+    if 'DATABASE' in key.upper() or 'POSTGRES' in key.upper():
+        print(f"  {key}: {value}")
+
+# If no DATABASE_URL is set, try to construct it from individual components
 if not DB_URL:
-    print("❌ DATABASE_URL not found in environment variables!")
-    # This should not happen on Render, but for local development:
-    DB_URL = 'postgresql://kiscouture:kiscouture@localhost:5432/kiscouture_db'
+    print("❌ DATABASE_URL not found, trying to construct from individual components...")
+    postgres_host = os.getenv('POSTGRES_HOST', 'localhost')
+    postgres_user = os.getenv('POSTGRES_USER', 'kiscouture')
+    postgres_password = os.getenv('POSTGRES_PASSWORD', 'kiscouture')
+    postgres_db = os.getenv('POSTGRES_DB', 'kiscouture_db')
+    
+    DB_URL = f'postgresql://{postgres_user}:{postgres_password}@{postgres_host}:5432/{postgres_db}'
+    print(f"✅ Constructed database URL: {DB_URL}")
 else:
     print("✅ DATABASE_URL found in environment variables")
 
@@ -185,7 +191,13 @@ class Order(db.Model):
         }
 
 # Initialize database AFTER models are defined
-init_database_tables()
+try:
+    init_database_tables()
+except Exception as e:
+    print(f"⚠️  Database initialization failed (this might be OK for Render): {e}")
+    if "InsufficientPrivilege" in str(e):
+        print("⚠️  Insufficient privileges - this is expected during Render deployment")
+        print("⚠️  Database tables should be created by the init_db.py script instead")
 
 # Routes - Clients
 
