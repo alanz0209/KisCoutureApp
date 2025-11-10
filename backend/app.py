@@ -925,6 +925,39 @@ def reset_pin():
         'message': 'PIN réinitialisé avec succès'
     })
 
+@app.route('/api/health/database', methods=['GET'])
+def database_health():
+    """Check database health and status"""
+    try:
+        with app.app_context():
+            # Check if tables exist
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            tables = inspector.get_table_names()
+            
+            # Count records in each table
+            table_counts = {}
+            for table in tables:
+                try:
+                    result = db.session.execute(db.text(f"SELECT COUNT(*) FROM {table}")).scalar()
+                    table_counts[table] = result
+                except Exception as e:
+                    table_counts[table] = f"Error counting: {str(e)}"
+            
+            return jsonify({
+                'status': 'healthy',
+                'database_path': app.config['SQLALCHEMY_DATABASE_URI'],
+                'tables': tables,
+                'record_counts': table_counts,
+                'message': 'Database is operational'
+            })
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'message': 'Database connection failed'
+        }), 500
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
