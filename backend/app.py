@@ -14,7 +14,7 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 
-# Database configuration - use Render's database connection
+# Database configuration - use Render's external database connection
 DB_URL = os.getenv('DATABASE_URL')
 
 # Print all environment variables for debugging
@@ -23,45 +23,14 @@ for key, value in sorted(os.environ.items()):
     if 'DATABASE' in key.upper() or 'POSTGRES' in key.upper():
         print(f"  {key}: {value}")
 
-# If no DATABASE_URL is set, try to construct it from individual components
+# If no DATABASE_URL is set, provide a clear error message
 if not DB_URL:
-    print("❌ DATABASE_URL not found, trying to construct from individual components...")
-    postgres_host = os.getenv('POSTGRES_HOST')
-    postgres_user = os.getenv('POSTGRES_USER', 'kiscouture')
-    postgres_password = os.getenv('POSTGRES_PASSWORD')
-    postgres_db = os.getenv('POSTGRES_DB', 'kiscouture_db')
-    
-    # Only construct URL if we have all the components
-    if postgres_host and postgres_user and postgres_password:
-        DB_URL = f'postgresql://{postgres_user}:{postgres_password}@{postgres_host}:5432/{postgres_db}'
-        print(f"✅ Constructed database URL from components: {DB_URL}")
-    else:
-        print("❌ Could not construct database URL from components")
-        print(f"  POSTGRES_HOST: {postgres_host}")
-        print(f"  POSTGRES_USER: {postgres_user}")
-        print(f"  POSTGRES_PASSWORD: {'*' * len(postgres_password) if postgres_password else 'None'}")
-        print(f"  POSTGRES_DB: {postgres_db}")
-        # For Render, let's wait for the database service to be ready
-        if os.getenv('RENDER'):
-            print("⚠️  We're on Render but no DATABASE_URL - waiting for database service...")
-            # Let's try to get the database connection info from Render's database service
-            # Render sets DATABASE_URL when the database is ready
-            import time
-            for i in range(10):
-                print(f"⏳ Waiting for database service... (attempt {i+1}/10)")
-                time.sleep(5)
-                DB_URL = os.getenv('DATABASE_URL')
-                if DB_URL:
-                    print(f"✅ DATABASE_URL found after waiting: {DB_URL}")
-                    break
-            if not DB_URL:
-                print("❌ Still no DATABASE_URL after waiting - using fallback")
-                # Fallback to localhost for debugging
-                DB_URL = 'postgresql://kiscouture:kiscouture@localhost:5432/kiscouture_db'
-        else:
-            # For local development, use localhost
-            DB_URL = 'postgresql://kiscouture:kiscouture@localhost:5432/kiscouture_db'
-            print("⚠️  Using localhost fallback for local development")
+    print("❌ DATABASE_URL not found in environment variables!")
+    print("Please set the DATABASE_URL environment variable with your PostgreSQL connection string.")
+    print("Example: postgresql://username:password@host:port/database_name")
+    # For local development, you can set this in a .env file
+    if not os.getenv('RENDER'):
+        print("For local development, create a .env file with: DATABASE_URL=postgresql://kiscouture:kiscouture@localhost:5432/kiscouture_db")
 else:
     print("✅ DATABASE_URL found in environment variables")
 
@@ -74,6 +43,7 @@ else:
     print("❌ No database URL available - this will cause errors!")
     # This is just for debugging - in production this should never happen
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///debug.db'
+    print("⚠️  Using SQLite fallback for debugging only!")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
