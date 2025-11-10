@@ -22,6 +22,18 @@ if DB_URL.startswith('postgres://'):
     # Handle Heroku-style PostgreSQL URLs
     DB_URL = DB_URL.replace('postgres://', 'postgresql://', 1)
 
+# Additional handling for Render PostgreSQL URLs
+if 'postgresql://' not in DB_URL and 'postgres://' not in DB_URL:
+    # Check if we're on Render and try to construct the URL
+    postgres_host = os.getenv('POSTGRES_HOST')
+    postgres_user = os.getenv('POSTGRES_USER')
+    postgres_password = os.getenv('POSTGRES_PASSWORD')
+    postgres_db = os.getenv('POSTGRES_DB')
+    
+    if postgres_host and postgres_user and postgres_password and postgres_db:
+        DB_URL = f'postgresql://{postgres_user}:{postgres_password}@{postgres_host}:5432/{postgres_db}'
+        print(f"Constructed PostgreSQL URL from environment variables: {DB_URL}")
+
 print(f"Using database URL: {DB_URL}")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
