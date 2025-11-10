@@ -57,17 +57,14 @@ def init_database_tables():
             existing_tables = inspector.get_table_names()
             print(f"Existing database tables: {existing_tables}")
             
-            # Only create tables if they don't exist
-            if not all(table in existing_tables for table in ['client', 'measurement', 'order']):
-                print("Creating missing tables...")
-                db.create_all()
-                print("Database tables created successfully!")
-                
-                # Verify tables exist now
-                tables = inspector.get_table_names()
-                print(f"Database tables after creation: {tables}")
-            else:
-                print("All required tables already exist. Skipping creation.")
+            # Always try to create tables (SQLAlchemy is smart about not recreating existing ones)
+            print("Creating tables...")
+            db.create_all()
+            print("Database tables created successfully!")
+            
+            # Verify tables exist now
+            tables = inspector.get_table_names()
+            print(f"Database tables after creation: {tables}")
             
             return True
     except Exception as e:
