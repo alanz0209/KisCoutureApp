@@ -12,7 +12,7 @@ def init_db():
     try:
         with app.app_context():
             print("🔧 Creating database tables...")
-            # Create all tables
+            # Create all tables (this won't drop existing tables or data)
             db.create_all()
             print("✅ Database tables created successfully!")
             
@@ -41,6 +41,27 @@ def init_db():
         return False
 
 if __name__ == '__main__':
+    # Check if database already exists and has data
+    with app.app_context():
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        
+        if tables:
+            # Check if any tables have data
+            has_data = False
+            for table in ['client', 'measurement', 'order']:
+                if table in tables:
+                    result = db.session.execute(db.text(f"SELECT COUNT(*) FROM {table}")).scalar()
+                    if result > 0:
+                        has_data = True
+                        print(f"📊 Found {result} records in {table} table")
+                        break
+            
+            if has_data:
+                print("⚠️  Database already exists with data. Skipping initialization to preserve data.")
+                sys.exit(0)
+    
     print("🔧 Initializing database...")
     success = init_db()
     if success:

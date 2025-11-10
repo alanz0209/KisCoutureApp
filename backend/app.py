@@ -57,25 +57,23 @@ def init_database_tables():
             # Print database URI for debugging
             print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
             
-            # Try to create tables
-            db.create_all()
-            print("Database tables created successfully!")
-            
-            # Verify tables exist
+            # Check if tables already exist
             from sqlalchemy import inspect
             inspector = inspect(db.engine)
-            tables = inspector.get_table_names()
-            print(f"Database tables: {tables}")
+            existing_tables = inspector.get_table_names()
+            print(f"Existing database tables: {existing_tables}")
             
-            # Ensure all required tables exist
-            required_tables = ['client', 'measurement', 'order']
-            missing_tables = [table for table in required_tables if table not in tables]
-            if missing_tables:
-                print(f"Warning: Missing tables: {missing_tables}")
-                # Try to create them again
+            # Only create tables if they don't exist
+            if not all(table in existing_tables for table in ['client', 'measurement', 'order']):
+                print("Creating missing tables...")
                 db.create_all()
+                print("Database tables created successfully!")
+                
+                # Verify tables exist now
                 tables = inspector.get_table_names()
-                print(f"Database tables after retry: {tables}")
+                print(f"Database tables after creation: {tables}")
+            else:
+                print("All required tables already exist. Skipping creation.")
             
             return True
     except Exception as e:
