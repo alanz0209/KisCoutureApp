@@ -5,40 +5,59 @@ Crée toutes les tables si elles n'existent pas
 """
 import os
 import sys
+import time
 from app import app, db
 
 def init_db():
     """Initialize database with proper error handling"""
-    try:
-        with app.app_context():
-            print("🔧 Creating database tables...")
-            # Create all tables (this won't drop existing tables or data)
-            db.create_all()
-            print("✅ Database tables created successfully!")
-            
-            # Verify tables exist
-            from sqlalchemy import inspect
-            inspector = inspect(db.engine)
-            tables = inspector.get_table_names()
-            print(f"📊 Available tables: {tables}")
-            
-            # Check if required tables exist
-            required_tables = ['client', 'measurement', 'order']
-            missing_tables = [table for table in required_tables if table not in tables]
-            
-            if missing_tables:
-                print(f"⚠️  Warning: Missing tables: {missing_tables}")
-                # Try to create them again
+    max_retries = 5
+    retry_delay = 2
+    
+    for attempt in range(max_retries):
+        try:
+            with app.app_context():
+                print(f"🔧 Attempt {attempt + 1} to create database tables...")
+                # Print database URI for debugging
+                print(f"Database URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+                
+                # Create all tables (this won't drop existing tables or data)
                 db.create_all()
+                print("✅ Database tables created successfully!")
+                
+                # Verify tables exist
+                from sqlalchemy import inspect
+                inspector = inspect(db.engine)
                 tables = inspector.get_table_names()
-                print(f"🔄 Tables after retry: {tables}")
-            
-            return True
-    except Exception as e:
-        print(f"❌ Error creating database tables: {e}")
-        import traceback
-        traceback.print_exc()
-        return False
+                print(f"📊 Available tables: {tables}")
+                
+                # Check if required tables exist
+                required_tables = ['client', 'measurement', 'order']
+                missing_tables = [table for table in required_tables if table not in tables]
+                
+                if missing_tables:
+                    print(f"⚠️  Warning: Missing tables: {missing_tables}")
+                    if attempt < max_retries - 1:
+                        print(f"Retrying in {retry_delay} seconds...")
+                        time.sleep(retry_delay)
+                        continue
+                    else:
+                        # Try to create them again
+                        db.create_all()
+                        tables = inspector.get_table_names()
+                        print(f"🔄 Tables after final attempt: {tables}")
+                
+                return True
+        except Exception as e:
+            print(f"❌ Error creating database tables (attempt {attempt + 1}): {e}")
+            if attempt < max_retries - 1:
+                print(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                import traceback
+                traceback.print_exc()
+                return False
+    
+    return False
 
 if __name__ == '__main__':
     # Always initialize the database (SQLAlchemy handles existing tables properly)
