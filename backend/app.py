@@ -26,13 +26,25 @@ for key, value in sorted(os.environ.items()):
 # If no DATABASE_URL is set, try to construct it from individual components
 if not DB_URL:
     print("❌ DATABASE_URL not found, trying to construct from individual components...")
-    postgres_host = os.getenv('POSTGRES_HOST', 'localhost')
+    postgres_host = os.getenv('POSTGRES_HOST')
     postgres_user = os.getenv('POSTGRES_USER', 'kiscouture')
-    postgres_password = os.getenv('POSTGRES_PASSWORD', 'kiscouture')
+    postgres_password = os.getenv('POSTGRES_PASSWORD')
     postgres_db = os.getenv('POSTGRES_DB', 'kiscouture_db')
     
-    DB_URL = f'postgresql://{postgres_user}:{postgres_password}@{postgres_host}:5432/{postgres_db}'
-    print(f"✅ Constructed database URL: {DB_URL}")
+    # Only construct URL if we have all the components
+    if postgres_host and postgres_user and postgres_password:
+        DB_URL = f'postgresql://{postgres_user}:{postgres_password}@{postgres_host}:5432/{postgres_db}'
+        print(f"✅ Constructed database URL from components: {DB_URL}")
+    else:
+        print("❌ Could not construct database URL from components")
+        print(f"  POSTGRES_HOST: {postgres_host}")
+        print(f"  POSTGRES_USER: {postgres_user}")
+        print(f"  POSTGRES_PASSWORD: {'*' * len(postgres_password) if postgres_password else 'None'}")
+        print(f"  POSTGRES_DB: {postgres_db}")
+        # For Render, this should not happen - let's wait and see if the init_db.py can handle it
+        if os.getenv('RENDER'):
+            print("⚠️  We're on Render but no DATABASE_URL - this might be a configuration issue")
+            print("⚠️  The init_db.py script should handle the database connection")
 else:
     print("✅ DATABASE_URL found in environment variables")
 

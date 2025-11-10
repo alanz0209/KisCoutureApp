@@ -10,7 +10,7 @@ from app import app, db
 
 def init_db():
     """Initialize database with proper error handling"""
-    max_retries = 15
+    max_retries = 20
     retry_delay = 5
     
     # Print environment variables for debugging
@@ -18,6 +18,12 @@ def init_db():
     for key, value in sorted(os.environ.items()):
         if 'DATABASE' in key.upper() or 'POSTGRES' in key.upper():
             print(f"  {key}: {value}")
+    
+    # Check if we're on Render
+    if os.getenv('RENDER'):
+        print("🔧 Running on Render - waiting for database service to be ready...")
+        # Add extra delay for Render deployment
+        time.sleep(10)
     
     for attempt in range(max_retries):
         try:
@@ -50,6 +56,10 @@ def init_db():
                 # For Render deployment, this might be expected as the database service handles it
                 print("⚠️  For Render deployment, this error might be expected and handled by the platform.")
                 return True  # Return True to continue deployment
+            if "Connection refused" in str(e):
+                print("❌ Connection refused - database service might not be ready yet")
+                if os.getenv('RENDER'):
+                    print("⚠️  On Render, this might be expected during initial deployment")
             if attempt < max_retries - 1:
                 print(f"Retrying in {retry_delay} seconds...")
                 time.sleep(retry_delay)
