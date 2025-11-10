@@ -41,11 +41,23 @@ if not DB_URL:
         print(f"  POSTGRES_USER: {postgres_user}")
         print(f"  POSTGRES_PASSWORD: {'*' * len(postgres_password) if postgres_password else 'None'}")
         print(f"  POSTGRES_DB: {postgres_db}")
-        # For Render, let's use a default that might work
+        # For Render, let's wait for the database service to be ready
         if os.getenv('RENDER'):
-            print("⚠️  We're on Render but no DATABASE_URL - using default Render PostgreSQL URL")
-            # Render's default PostgreSQL service URL format
-            DB_URL = 'postgresql://kiscouture:kiscouture@kis-couture-db:5432/kiscouture_db'
+            print("⚠️  We're on Render but no DATABASE_URL - waiting for database service...")
+            # Let's try to get the database connection info from Render's database service
+            # Render sets DATABASE_URL when the database is ready
+            import time
+            for i in range(10):
+                print(f"⏳ Waiting for database service... (attempt {i+1}/10)")
+                time.sleep(5)
+                DB_URL = os.getenv('DATABASE_URL')
+                if DB_URL:
+                    print(f"✅ DATABASE_URL found after waiting: {DB_URL}")
+                    break
+            if not DB_URL:
+                print("❌ Still no DATABASE_URL after waiting - using fallback")
+                # Fallback to localhost for debugging
+                DB_URL = 'postgresql://kiscouture:kiscouture@localhost:5432/kiscouture_db'
         else:
             # For local development, use localhost
             DB_URL = 'postgresql://kiscouture:kiscouture@localhost:5432/kiscouture_db'
