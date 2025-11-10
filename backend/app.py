@@ -52,8 +52,21 @@ print(f"Using database URL: {DB_URL}")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
+
+# Configure UPLOAD_FOLDER properly for Render deployment
+UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')
+# On Render, use the absolute path for the mounted disk
+if os.getenv('RENDER'):
+    # Render mounts the disk at /opt/render/project/src/backend/uploads
+    app.config['UPLOAD_FOLDER'] = '/opt/render/project/src/backend/uploads'
+else:
+    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+# Create upload folder if it doesn't exist
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+print(f"Upload folder configured at: {app.config['UPLOAD_FOLDER']}")
 
 # Configure CORS to allow requests from the frontend domain
 CORS(app, origins=[
@@ -98,9 +111,6 @@ def init_database_tables():
         import traceback
         traceback.print_exc()
         return False
-
-# Create upload folder if it doesn't exist
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Models
 class Client(db.Model):
