@@ -14,21 +14,13 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 
-# Force PostgreSQL database configuration
+# Database configuration - use Render's database connection
 DB_URL = os.getenv('DATABASE_URL')
 
-# If no DATABASE_URL is set, construct it from individual components
+# Ensure we have a database URL
 if not DB_URL:
-    postgres_host = os.getenv('POSTGRES_HOST', 'localhost')
-    postgres_user = os.getenv('POSTGRES_USER', 'kiscouture')
-    postgres_password = os.getenv('POSTGRES_PASSWORD')
-    postgres_db = os.getenv('POSTGRES_DB', 'kiscouture_db')
-    
-    if postgres_password:
-        DB_URL = f'postgresql://{postgres_user}:{postgres_password}@{postgres_host}:5432/{postgres_db}'
-    else:
-        # Fallback to Render's database connection
-        DB_URL = 'postgresql://kiscouture:kiscouture@localhost:5432/kiscouture_db'
+    # This should not happen on Render, but for local development:
+    DB_URL = 'postgresql://kiscouture:kiscouture@localhost:5432/kiscouture_db'
 
 print(f"Using database URL: {DB_URL}")
 
