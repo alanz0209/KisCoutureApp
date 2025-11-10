@@ -41,16 +41,28 @@ if not DB_URL:
         print(f"  POSTGRES_USER: {postgres_user}")
         print(f"  POSTGRES_PASSWORD: {'*' * len(postgres_password) if postgres_password else 'None'}")
         print(f"  POSTGRES_DB: {postgres_db}")
-        # For Render, this should not happen - let's wait and see if the init_db.py can handle it
+        # For Render, let's use a default that might work
         if os.getenv('RENDER'):
-            print("⚠️  We're on Render but no DATABASE_URL - this might be a configuration issue")
-            print("⚠️  The init_db.py script should handle the database connection")
+            print("⚠️  We're on Render but no DATABASE_URL - using default Render PostgreSQL URL")
+            # Render's default PostgreSQL service URL format
+            DB_URL = 'postgresql://kiscouture:kiscouture@kis-couture-db:5432/kiscouture_db'
+        else:
+            # For local development, use localhost
+            DB_URL = 'postgresql://kiscouture:kiscouture@localhost:5432/kiscouture_db'
+            print("⚠️  Using localhost fallback for local development")
 else:
     print("✅ DATABASE_URL found in environment variables")
 
 print(f"Using database URL: {DB_URL}")
 
-app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
+# Ensure we have a database URL before setting SQLAlchemy config
+if DB_URL:
+    app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
+else:
+    print("❌ No database URL available - this will cause errors!")
+    # This is just for debugging - in production this should never happen
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///debug.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
