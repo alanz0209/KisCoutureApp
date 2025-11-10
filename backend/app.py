@@ -65,6 +65,11 @@ else:
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 print(f"Upload folder configured at: {app.config['UPLOAD_FOLDER']}")
 
+# Explicitly serve static files from the uploads folder
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 # Configure CORS to allow requests from the frontend domain
 CORS(app, origins=[
     "https://kiscouture.onrender.com",
