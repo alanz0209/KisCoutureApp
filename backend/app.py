@@ -14,7 +14,7 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 
-# Database configuration - use Render's external database connection
+# Database configuration - use Render's database connection
 DB_URL = os.getenv('DATABASE_URL')
 
 # Print all environment variables for debugging
@@ -23,28 +23,34 @@ for key, value in sorted(os.environ.items()):
     if 'DATABASE' in key.upper() or 'POSTGRES' in key.upper():
         print(f"  {key}: {value}")
 
-# If no DATABASE_URL is set, provide a clear error message
+# If no DATABASE_URL is set, this is a critical error for Render deployment
 if not DB_URL:
-    print("❌ DATABASE_URL not found in environment variables!")
-    print("Please set the DATABASE_URL environment variable with your PostgreSQL connection string.")
-    print("Example: postgresql://username:password@host:port/database_name")
-    # For local development, you can set this in a .env file
-    if not os.getenv('RENDER'):
-        print("For local development, create a .env file with: DATABASE_URL=postgresql://kiscouture:kiscouture@localhost:5432/kiscouture_db")
+    print("❌ CRITICAL ERROR: DATABASE_URL not found in environment variables!")
+    print("This application requires a PostgreSQL database connection.")
+    print("")
+    print("To fix this issue:")
+    print("1. Create a PostgreSQL database on Render")
+    print("2. Copy the 'External Connection String' from the database dashboard")
+    print("3. Set it as the DATABASE_URL environment variable in your web service")
+    print("")
+    print("Example DATABASE_URL format:")
+    print("postgresql://username:password@hostname:port/database_name")
+    print("")
+    if os.getenv('RENDER'):
+        print("❌ DEPLOYMENT WILL FAIL - Please set DATABASE_URL environment variable!")
+        # Exit with error code to prevent deployment
+        import sys
+        sys.exit(1)
+    else:
+        # For local development, use localhost fallback
+        print("⚠️  Using localhost fallback for local development only!")
+        DB_URL = 'postgresql://kiscouture:kiscouture@localhost:5432/kiscouture_db'
 else:
     print("✅ DATABASE_URL found in environment variables")
 
 print(f"Using database URL: {DB_URL}")
 
-# Ensure we have a database URL before setting SQLAlchemy config
-if DB_URL:
-    app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
-else:
-    print("❌ No database URL available - this will cause errors!")
-    # This is just for debugging - in production this should never happen
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///debug.db'
-    print("⚠️  Using SQLite fallback for debugging only!")
-
+app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
