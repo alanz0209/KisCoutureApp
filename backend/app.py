@@ -54,15 +54,12 @@ app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configure UPLOAD_FOLDER properly for Render deployment
-UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER', 'uploads')
+UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER')
 # On Render, use the absolute path for the mounted disk
-if os.getenv('RENDER'):
-    # Render mounts the disk at /opt/render/project/src/backend/uploads
-    app.config['UPLOAD_FOLDER'] = '/opt/render/project/src/backend/uploads'
-else:
+if os.getenv('RENDER') and UPLOAD_FOLDER:
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+else:
+    app.config['UPLOAD_FOLDER'] = 'uploads'
 
 # Create upload folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
