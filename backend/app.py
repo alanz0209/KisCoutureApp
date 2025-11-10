@@ -65,9 +65,10 @@ else:
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 print(f"Upload folder configured at: {app.config['UPLOAD_FOLDER']}")
 
-# Explicitly serve static files from the uploads folder
+# Update the existing route to handle path parameters correctly
+# Route - Upload image
 @app.route('/uploads/<path:filename>')
-def uploaded_file(filename):
+def serve_uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 # Configure CORS to allow requests from the frontend domain
@@ -509,11 +510,6 @@ def get_stats():
         'total_avance': total_avance,
         'total_restant': total_restant
     })
-
-# Route - Upload image
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 # Route to initialize database (for debugging)
 @app.route('/api/init-db', methods=['POST'])
