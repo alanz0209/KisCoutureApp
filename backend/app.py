@@ -14,24 +14,17 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 
-# Use absolute path for database on Render
-DB_PATH = os.getenv('DATABASE_URL', 'sqlite:///kis_couture.db')
+# Database configuration - support both SQLite and PostgreSQL
+DB_URL = os.getenv('DATABASE_URL', 'sqlite:///kis_couture.db')
 
-# Ensure database is created in a persistent location on Render
-if os.getenv('RENDER', False):
-    # On Render, use a persistent location
-    DB_NAME = 'kis_couture.db'
-    DB_PATH = f'sqlite:////opt/render/project/src/backend/{DB_NAME}'
-    print(f"Using Render database path: {DB_PATH}")
-else:
-    # Local development
-    if DB_PATH.startswith('sqlite:///') and not DB_PATH.startswith('sqlite:////'):
-        # Convert relative path to absolute path
-        DB_NAME = DB_PATH.replace('sqlite:///', '')
-        DB_PATH = f'sqlite:///{os.path.abspath(DB_NAME)}'
-        print(f"Using local database path: {DB_PATH}")
-        
-app.config['SQLALCHEMY_DATABASE_URI'] = DB_PATH
+# Handle different database URLs
+if DB_URL.startswith('postgres://'):
+    # Handle Heroku-style PostgreSQL URLs
+    DB_URL = DB_URL.replace('postgres://', 'postgresql://', 1)
+
+print(f"Using database URL: {DB_URL}")
+
+app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
