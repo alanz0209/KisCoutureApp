@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import inspect
 from datetime import datetime
 import os
+import base64
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -583,6 +584,10 @@ def sync_data():
                 if str(original_client_id).startswith('temp_') and original_client_id in id_mappings:
                     measurement_data['client_id'] = id_mappings[original_client_id]
                 
+                # Handle image data synchronization
+                image_data = measurement_data.pop('image_data', None)
+                image_path = measurement_data.get('image_path')
+                
                 # For temporary measurements, create new records
                 if str(measurement_data['id']).startswith('temp_'):
                     measurement = Measurement(
@@ -601,10 +606,36 @@ def sync_data():
                         longueur_genou=measurement_data.get('longueur_genou'),  # New field
                         tour_mollet=measurement_data.get('tour_mollet'),  # New field
                         description=measurement_data.get('description'),  # New field
-                        image_path=measurement_data.get('image_path'),
+                        image_path=image_path,
                         created_at=measurement_data.get('created_at', sync_timestamp),
                         updated_at=sync_timestamp
                     )
+                    
+                    # Handle image upload from base64 data
+                    if image_data and isinstance(image_data, str) and image_data.startswith('data:image'):
+                        try:
+                            # Extract base64 data
+                            header, encoded = image_data.split(',', 1)
+                            image_data_decoded = base64.b64decode(encoded)
+                            
+                            # Generate filename
+                            ext = '.jpg'
+                            if 'png' in header:
+                                ext = '.png'
+                            elif 'gif' in header:
+                                ext = '.gif'
+                            
+                            filename = f"{measurement.client_id}_{int(datetime.now().timestamp())}{ext}"
+                            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                            
+                            # Save image file
+                            with open(filepath, 'wb') as f:
+                                f.write(image_data_decoded)
+                            
+                            measurement.image_path = filename
+                        except Exception as e:
+                            print(f"Error saving image from base64: {e}")
+                    
                     db.session.add(measurement)
                 else:
                     # Check if measurement exists
@@ -626,7 +657,42 @@ def sync_data():
                         measurement.longueur_genou = measurement_data.get('longueur_genou', measurement.longueur_genou)  # New field
                         measurement.tour_mollet = measurement_data.get('tour_mollet', measurement.tour_mollet)  # New field
                         measurement.description = measurement_data.get('description', measurement.description)  # New field
-                        measurement.image_path = measurement_data.get('image_path', measurement.image_path)
+                        
+                        # Handle image updates
+                        if image_path:
+                            measurement.image_path = image_path
+                        
+                        # Handle image upload from base64 data
+                        if image_data and isinstance(image_data, str) and image_data.startswith('data:image'):
+                            try:
+                                # Extract base64 data
+                                header, encoded = image_data.split(',', 1)
+                                image_data_decoded = base64.b64decode(encoded)
+                                
+                                # Generate filename
+                                ext = '.jpg'
+                                if 'png' in header:
+                                    ext = '.png'
+                                elif 'gif' in header:
+                                    ext = '.gif'
+                                
+                                filename = f"{measurement.client_id}_{int(datetime.now().timestamp())}{ext}"
+                                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                                
+                                # Delete old image if exists
+                                if measurement.image_path:
+                                    old_path = os.path.join(app.config['UPLOAD_FOLDER'], measurement.image_path)
+                                    if os.path.exists(old_path):
+                                        os.remove(old_path)
+                                
+                                # Save image file
+                                with open(filepath, 'wb') as f:
+                                    f.write(image_data_decoded)
+                                
+                                measurement.image_path = filename
+                            except Exception as e:
+                                print(f"Error saving image from base64: {e}")
+                        
                         measurement.updated_at = sync_timestamp
                     else:
                         # Create new measurement with the provided ID
@@ -654,10 +720,36 @@ def sync_data():
                             longueur_genou=measurement_data.get('longueur_genou'),  # New field
                             tour_mollet=measurement_data.get('tour_mollet'),  # New field
                             description=measurement_data.get('description'),  # New field
-                            image_path=measurement_data.get('image_path'),
+                            image_path=image_path,
                             created_at=measurement_data.get('created_at', sync_timestamp),
                             updated_at=sync_timestamp
                         )
+                        
+                        # Handle image upload from base64 data
+                        if image_data and isinstance(image_data, str) and image_data.startswith('data:image'):
+                            try:
+                                # Extract base64 data
+                                header, encoded = image_data.split(',', 1)
+                                image_data_decoded = base64.b64decode(encoded)
+                                
+                                # Generate filename
+                                ext = '.jpg'
+                                if 'png' in header:
+                                    ext = '.png'
+                                elif 'gif' in header:
+                                    ext = '.gif'
+                                
+                                filename = f"{measurement.client_id}_{int(datetime.now().timestamp())}{ext}"
+                                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                                
+                                # Save image file
+                                with open(filepath, 'wb') as f:
+                                    f.write(image_data_decoded)
+                                
+                                measurement.image_path = filename
+                            except Exception as e:
+                                print(f"Error saving image from base64: {e}")
+                        
                         db.session.add(measurement)
         
         # Process order updates

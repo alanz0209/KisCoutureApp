@@ -131,7 +131,7 @@
               />
               <img 
                 v-else-if="measurement.image_path" 
-                :src="`http://localhost:5000/uploads/${measurement.image_path}`" 
+                :src="`${apiUrl}/uploads/${measurement.image_path}`" 
                 alt="Référence" 
               />
             </div>
@@ -150,6 +150,9 @@ import { measurementAPI, clientAPI, isOnline } from '../api';
 export default {
   name: 'Measurements',
   setup() {
+    // Get API URL from environment
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    
     const clients = ref([]);
     const selectedClient = ref(null);
     const measurements = ref([]);
@@ -265,7 +268,8 @@ export default {
       handleImageChange,
       handleSubmit,
       formatDate,
-      isOnline: computed(() => isOnline())
+      isOnline: computed(() => isOnline()),
+      apiUrl
     };
   }
 };
@@ -642,4 +646,3 @@ export default {
   }
 }
 }
-</style>

@@ -232,7 +232,7 @@
               />
               <img 
                 v-else-if="clientMeasurements.image_path" 
-                :src="`http://localhost:5000/uploads/${clientMeasurements.image_path}`" 
+                :src="`${apiUrl}/uploads/${clientMeasurements.image_path}`" 
                 alt="Référence" 
               />
             </div>
@@ -279,6 +279,9 @@ import { showNotification } from '../utils/notifications';
 export default {
   name: 'Clients',
   setup() {
+    // Get API URL from environment
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
     const clients = ref([]);
     const selectedClient = ref(null);
     const clientMeasurements = ref(null);
