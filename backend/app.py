@@ -15,12 +15,20 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 # Database configuration - use Render's database connection
+print("Environment variables:")
+for key, value in os.environ.items():
+    if 'DATABASE' in key or 'POSTGRES' in key:
+        print(f"  {key}: {value}")
+
 DB_URL = os.getenv('DATABASE_URL')
 
 # Ensure we have a database URL
 if not DB_URL:
+    print("❌ DATABASE_URL not found in environment variables!")
     # This should not happen on Render, but for local development:
     DB_URL = 'postgresql://kiscouture:kiscouture@localhost:5432/kiscouture_db'
+else:
+    print("✅ DATABASE_URL found in environment variables")
 
 print(f"Using database URL: {DB_URL}")
 
