@@ -1,4 +1,11 @@
 services:
+  # PostgreSQL Database
+  - type: postgres
+    name: kis-couture-db
+    databaseName: kiscouture_db
+    user: kiscouture
+    plan: free
+
   # Backend API
   - type: web
     name: kis-couture-backend
@@ -19,13 +26,6 @@ services:
       - name: uploads
         mountPath: /opt/render/project/src/backend/uploads
         sizeGB: 1
-
-  # PostgreSQL Database
-  - type: postgres
-    name: kis-couture-db
-    databaseName: kiscouture_db
-    user: kiscouture
-    plan: free
 
   # Frontend Static Site
   - type: web

@@ -14,25 +14,21 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 
-# Database configuration - support both SQLite and PostgreSQL
-DB_URL = os.getenv('DATABASE_URL', 'sqlite:///kis_couture.db')
+# Force PostgreSQL database configuration
+DB_URL = os.getenv('DATABASE_URL')
 
-# Handle different database URLs
-if DB_URL.startswith('postgres://'):
-    # Handle Heroku-style PostgreSQL URLs
-    DB_URL = DB_URL.replace('postgres://', 'postgresql://', 1)
-
-# Additional handling for Render PostgreSQL URLs
-if 'postgresql://' not in DB_URL and 'postgres://' not in DB_URL:
-    # Check if we're on Render and try to construct the URL
-    postgres_host = os.getenv('POSTGRES_HOST')
-    postgres_user = os.getenv('POSTGRES_USER')
+# If no DATABASE_URL is set, construct it from individual components
+if not DB_URL:
+    postgres_host = os.getenv('POSTGRES_HOST', 'localhost')
+    postgres_user = os.getenv('POSTGRES_USER', 'kiscouture')
     postgres_password = os.getenv('POSTGRES_PASSWORD')
-    postgres_db = os.getenv('POSTGRES_DB')
+    postgres_db = os.getenv('POSTGRES_DB', 'kiscouture_db')
     
-    if postgres_host and postgres_user and postgres_password and postgres_db:
+    if postgres_password:
         DB_URL = f'postgresql://{postgres_user}:{postgres_password}@{postgres_host}:5432/{postgres_db}'
-        print(f"Constructed PostgreSQL URL from environment variables: {DB_URL}")
+    else:
+        # Fallback to Render's database connection
+        DB_URL = 'postgresql://kiscouture:kiscouture@localhost:5432/kiscouture_db'
 
 print(f"Using database URL: {DB_URL}")
 
