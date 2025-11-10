@@ -55,21 +55,44 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configure UPLOAD_FOLDER properly for Render deployment
 UPLOAD_FOLDER = os.getenv('UPLOAD_FOLDER')
+print(f"UPLOAD_FOLDER env var: {UPLOAD_FOLDER}")
+
 # On Render, use the absolute path for the mounted disk
 if os.getenv('RENDER') and UPLOAD_FOLDER:
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+    print(f"Using Render upload folder: {UPLOAD_FOLDER}")
 else:
     app.config['UPLOAD_FOLDER'] = 'uploads'
+    print(f"Using default upload folder: uploads")
 
 # Create upload folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 print(f"Upload folder configured at: {app.config['UPLOAD_FOLDER']}")
+print(f"Upload folder exists: {os.path.exists(app.config['UPLOAD_FOLDER'])}")
 
-# Update the existing route to handle path parameters correctly
-# Route - Upload image
+# List files in upload folder for debugging (only in development)
+if not os.getenv('RENDER'):
+    try:
+        files = os.listdir(app.config['UPLOAD_FOLDER'])
+        print(f"Files in upload folder: {files}")
+    except Exception as e:
+        print(f"Error listing upload folder: {e}")
+
+# Update the existing route to handle path parameters correctly and add debugging
 @app.route('/uploads/<path:filename>')
 def serve_uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    upload_folder = app.config['UPLOAD_FOLDER']
+    file_path = os.path.join(upload_folder, filename)
+    print(f"Request for file: {filename}")
+    print(f"Upload folder: {upload_folder}")
+    print(f"Full file path: {file_path}")
+    print(f"File exists: {os.path.exists(file_path)}")
+    
+    if os.path.exists(file_path):
+        return send_from_directory(upload_folder, filename)
+    else:
+        print(f"File not found: {file_path}")
+        return jsonify({'error': 'File not found'}), 404
 
 # Configure CORS to allow requests from the frontend domain
 CORS(app, origins=[
